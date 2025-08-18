@@ -11,15 +11,13 @@
         <UseModOffsetForSearchString>false</UseModOffsetForSearchString>
         <SearchStringOffset>0</SearchStringOffset>
         <OutputFileExtension>.jpg</OutputFileExtension>
+        <MinimumSizeForCutting>0</MinimumSizeForCutting>
         <CutParameters>
             <CutStyle>terminator</CutStyle>
             <TerminatorString>FFD9</TerminatorString>
             <TreatTerminatorStringAsHex>true</TreatTerminatorStringAsHex>
-            <CutSizeAtOffset>0</CutSizeAtOffset>
-            <CutSizeOffsetSize>0</CutSizeOffsetSize>
-            <CutSizeOffsetEndianess>big</CutSizeOffsetEndianess>
+            <IncludeTerminatorInSize>true</IncludeTerminatorInSize>
         </CutParameters>
         <AddExtraBytes>false</AddExtraBytes>
-        <AddExtraByteSize>0</AddExtraByteSize>
     </SearchParameters>
 </OffsetFinderTemplate>
