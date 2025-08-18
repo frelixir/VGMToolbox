@@ -13,7 +13,7 @@
         <OutputFileExtension>.png</OutputFileExtension>
         <CutParameters>
             <CutStyle>terminator</CutStyle>
-            <TerminatorString>49454E44AE426082</TerminatorString>
+            <TerminatorString>89504E47</TerminatorString>
             <TreatTerminatorStringAsHex>true</TreatTerminatorStringAsHex>
             <CutSizeAtOffset>0</CutSizeAtOffset>
             <CutSizeOffsetSize>0</CutSizeOffsetSize>
@@ -23,3 +23,4 @@
         <AddExtraByteSize>0</AddExtraByteSize>
     </SearchParameters>
 </OffsetFinderTemplate>
+
