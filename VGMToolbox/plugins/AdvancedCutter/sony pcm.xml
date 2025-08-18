@@ -2,7 +2,7 @@
 <OffsetFinderTemplate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 	<Header>
 		<FormatName>sony games pcm audio</FormatName>
-		<Author>Modified PCM Extractor</Author>
+		<Author>PCM Extractor</Author>
 	</Header>
 	<SearchParameters>
 		<SearchString>00000000000000000000000000000000</SearchString>
@@ -11,15 +11,13 @@
 		<UseModOffsetForSearchString>false</UseModOffsetForSearchString>
 		<SearchStringOffset>0</SearchStringOffset>
 		<OutputFileExtension>.pcm</OutputFileExtension>
+		<MinimumSizeForCutting>1</MinimumSizeForCutting>
 		<CutParameters>
 			<CutStyle>terminator</CutStyle>
 			<TerminatorString>00077777777777777777777777777777</TerminatorString>
 			<TreatTerminatorStringAsHex>true</TreatTerminatorStringAsHex>
-			<CutSizeAtOffset>0</CutSizeAtOffset>
-			<CutSizeOffsetSize>0</CutSizeOffsetSize>
-			<CutSizeOffsetEndianess>little</CutSizeOffsetEndianess>
+			<IncludeTerminatorInSize>true</IncludeTerminatorInSize>
 		</CutParameters>
 		<AddExtraBytes>false</AddExtraBytes>
-		<AddExtraByteSize>0</AddExtraByteSize>
 	</SearchParameters>
 </OffsetFinderTemplate>
