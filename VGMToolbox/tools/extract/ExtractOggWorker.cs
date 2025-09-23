@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +19,8 @@ namespace VGMToolbox.tools.extract
         }
 
         public ExtractOggWorker() :
-            base() { }
+            base()
+        { }
 
         protected override void DoTaskForFile(string pPath, IVgmtWorkerStruct pTaskStruct, DoWorkEventArgs e)
         {
@@ -30,7 +31,7 @@ namespace VGMToolbox.tools.extract
             byte pageType;
             long pageSize;
             uint bitstreamSerialNumber;
-            
+
             byte segmentCount;
             uint sizeOfAllSegments;
             byte i;
@@ -41,6 +42,8 @@ namespace VGMToolbox.tools.extract
             bool pageWrittenToFile = false;
 
             Dictionary<uint, FileStream> outputStreams = new Dictionary<uint, FileStream>();
+            Dictionary<uint, int> streamCounters = new Dictionary<uint, int>();
+            int globalFileCounter = 0;
 
             using (FileStream fs = File.Open(pPath, FileMode.Open, FileAccess.Read))
             {
@@ -53,7 +56,7 @@ namespace VGMToolbox.tools.extract
                         if (!this.CancellationPending)
                         {
                             pageWrittenToFile = false;
-                            
+
                             //------------------
                             // get page details
                             //------------------
@@ -75,62 +78,16 @@ namespace VGMToolbox.tools.extract
                             //-----------------------------
                             rawPageBytes = ParseFile.ParseSimpleOffset(fs, offset, (int)pageSize);
 
-                                // open stream
-                                if ((pageType & XiphOrgOggContainer.PAGE_TYPE_BEGIN_STREAM) ==
-                                    XiphOrgOggContainer.PAGE_TYPE_BEGIN_STREAM)
-                                {
-                                    if (outputStreams.ContainsKey(bitstreamSerialNumber))
-                                    {
-                                        if (extractOggStruct.StopParsingOnFormatError)
-                                        {
-                                            throw new FormatException(
-                                                String.Format("多次找到流开始页面,但没有流结束页面,用于序列号: {1}.{2}",
-                                                pPath,
-                                                bitstreamSerialNumber.ToString("X8"),
-                                                Environment.NewLine));
-                                        }
-                                        else
-                                        {
-                                            //this.progressStruct.Clear();
-                                            //progressStruct.GenericMessage = String.Format("Warning, for file <{0}>, Beginning of Stream page found multiple times without End of Stream page, for serial number: {1}.{2}",
-                                            //                                    pPath,
-                                            //                                    bitstreamSerialNumber.ToString("X8"),
-                                            //                                    Environment.NewLine);
-                                            //ReportProgress(Constants.ProgressMessageOnly, progressStruct);                                                                            
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // create the output stream
-                                        outputFileName = Path.Combine(outputPath, String.Format("{0}_0x{1}_{2}.ogg", Path.GetFileNameWithoutExtension(pPath), offset.ToString("X8"), bitstreamSerialNumber.ToString("X8")));
-                                        outputFileName = FileUtil.GetNonDuplicateFileName(outputFileName);
-
-                                        if (!Directory.Exists(outputPath))
-                                        {
-                                            Directory.CreateDirectory(outputPath);
-                                        }
-
-                                        outputStreams[bitstreamSerialNumber] = File.Open(outputFileName, FileMode.CreateNew, FileAccess.Write);
-                                        outputStreams[bitstreamSerialNumber].Write(rawPageBytes, 0, rawPageBytes.Length);
-                                        pageWrittenToFile = true;
-                                    }
-                                }
-
-                                // write page otherwise
+                            // open stream
+                            if ((pageType & XiphOrgOggContainer.PAGE_TYPE_BEGIN_STREAM) ==
+                                XiphOrgOggContainer.PAGE_TYPE_BEGIN_STREAM)
+                            {
                                 if (outputStreams.ContainsKey(bitstreamSerialNumber))
-                                {
-                                    if (!pageWrittenToFile)
-                                    {
-                                        outputStreams[bitstreamSerialNumber].Write(rawPageBytes, 0, rawPageBytes.Length);
-                                        pageWrittenToFile = true;
-                                    }
-                                }
-                                else
                                 {
                                     if (extractOggStruct.StopParsingOnFormatError)
                                     {
                                         throw new FormatException(
-                                            String.Format("找到没有流开始页的流数据页,用于序列号:{1}.{2}",
+                                            String.Format("多次找到流开始页面,但没有流结束页面,用于序列号: {1}.{2}",
                                             pPath,
                                             bitstreamSerialNumber.ToString("X8"),
                                             Environment.NewLine));
@@ -138,56 +95,118 @@ namespace VGMToolbox.tools.extract
                                     else
                                     {
                                         //this.progressStruct.Clear();
-                                        //progressStruct.GenericMessage = String.Format("Warning, for file <{0}>, Stream data page found without Beginning of Stream page, for serial number: {1}.{2}",
+                                        //progressStruct.GenericMessage = String.Format("Warning, for file <{0}>, Beginning of Stream page found multiple times without End of Stream page, for serial number: {1}.{2}",
                                         //                                    pPath,
                                         //                                    bitstreamSerialNumber.ToString("X8"),
                                         //                                    Environment.NewLine);
-                                        //ReportProgress(Constants.ProgressMessageOnly, progressStruct);                                    
+                                        //ReportProgress(Constants.ProgressMessageOnly, progressStruct);                                                                            
                                     }
                                 }
-                                
-                            
-                                // close stream if needed
-                                if ((pageType & XiphOrgOggContainer.PAGE_TYPE_END_STREAM) ==
-                                        XiphOrgOggContainer.PAGE_TYPE_END_STREAM)
+                                else
                                 {
-                                    if (outputStreams.ContainsKey(bitstreamSerialNumber))
+                                    globalFileCounter++;
+
+                                    string baseFileName;
+                                    int fileNumber = globalFileCounter;
+
+                                    do
                                     {
-                                        if (!pageWrittenToFile)
-                                        {
-                                            outputStreams[bitstreamSerialNumber].Write(rawPageBytes, 0, rawPageBytes.Length);
-                                            pageWrittenToFile = true;
-                                        }
+                                        baseFileName = Path.Combine(outputPath,
+                                            String.Format("{0}_{1}.ogg",
+                                                Path.GetFileNameWithoutExtension(pPath),
+                                                fileNumber));
+                                        fileNumber++;
+                                    } while (File.Exists(baseFileName));
 
-                                        outputStreams[bitstreamSerialNumber].Close();
-                                        outputStreams[bitstreamSerialNumber].Dispose();
+                                    fileNumber--;
+                                    outputFileName = Path.Combine(outputPath,
+                                        String.Format("{0}_{1}.ogg",
+                                            Path.GetFileNameWithoutExtension(pPath),
+                                            fileNumber));
 
-                                        // remove stream from dictionary
-                                        outputStreams.Remove(bitstreamSerialNumber);
+                                    if (!Directory.Exists(outputPath))
+                                    {
+                                        Directory.CreateDirectory(outputPath);
+                                    }
+
+                                    outputStreams[bitstreamSerialNumber] = File.Open(outputFileName, FileMode.CreateNew, FileAccess.Write);
+                                    outputStreams[bitstreamSerialNumber].Write(rawPageBytes, 0, rawPageBytes.Length);
+                                    pageWrittenToFile = true;
+                                }
+                            }
+
+                            // write page otherwise
+                            if (outputStreams.ContainsKey(bitstreamSerialNumber))
+                            {
+                                if (!pageWrittenToFile)
+                                {
+                                    outputStreams[bitstreamSerialNumber].Write(rawPageBytes, 0, rawPageBytes.Length);
+                                    pageWrittenToFile = true;
+                                }
+                            }
+                            else
+                            {
+                                if (extractOggStruct.StopParsingOnFormatError)
+                                {
+                                    throw new FormatException(
+                                        String.Format("找到没有流开始页的流数据页,用于序列号:{1}.{2}",
+                                        pPath,
+                                        bitstreamSerialNumber.ToString("X8"),
+                                        Environment.NewLine));
+                                }
+                                else
+                                {
+                                    //this.progressStruct.Clear();
+                                    //progressStruct.GenericMessage = String.Format("Warning, for file <{0}>, Stream data page found without Beginning of Stream page, for serial number: {1}.{2}",
+                                    //                                    pPath,
+                                    //                                    bitstreamSerialNumber.ToString("X8"),
+                                    //                                    Environment.NewLine);
+                                    //ReportProgress(Constants.ProgressMessageOnly, progressStruct);                                    
+                                }
+                            }
+
+
+                            // close stream if needed
+                            if ((pageType & XiphOrgOggContainer.PAGE_TYPE_END_STREAM) ==
+                                    XiphOrgOggContainer.PAGE_TYPE_END_STREAM)
+                            {
+                                if (outputStreams.ContainsKey(bitstreamSerialNumber))
+                                {
+                                    if (!pageWrittenToFile)
+                                    {
+                                        outputStreams[bitstreamSerialNumber].Write(rawPageBytes, 0, rawPageBytes.Length);
+                                        pageWrittenToFile = true;
+                                    }
+
+                                    outputStreams[bitstreamSerialNumber].Close();
+                                    outputStreams[bitstreamSerialNumber].Dispose();
+
+                                    // remove stream from dictionary
+                                    outputStreams.Remove(bitstreamSerialNumber);
+                                }
+                                else
+                                {
+                                    if (extractOggStruct.StopParsingOnFormatError)
+                                    {
+                                        throw new FormatException(
+                                            String.Format("找到没有流开始页面的流结束页面,用于序列号:{1}{2}.",
+                                            pPath,
+                                            bitstreamSerialNumber.ToString("X8"),
+                                            Environment.NewLine));
                                     }
                                     else
                                     {
-                                        if (extractOggStruct.StopParsingOnFormatError)
-                                        {
-                                            throw new FormatException(
-                                                String.Format("找到没有流开始页面的流结束页面,用于序列号:{1}{2}.",
-                                                pPath,
-                                                bitstreamSerialNumber.ToString("X8"),
-                                                Environment.NewLine));
-                                        }
-                                        else
-                                        {
-                                            //this.progressStruct.Clear();
-                                            //progressStruct.GenericMessage = String.Format("Warning, for file <{0}>, End of Stream page found without a Beginning of Stream page, for serial number: {1}.{2}",
-                                            //                                    pPath,
-                                            //                                    bitstreamSerialNumber.ToString("X8"),
-                                            //                                    Environment.NewLine);
-                                            //ReportProgress(Constants.ProgressMessageOnly, progressStruct);
-                                        }
+                                        //this.progressStruct.Clear();
+                                        //progressStruct.GenericMessage = String.Format("Warning, for file <{0}>, End of Stream page found without a Beginning of Stream page, for serial number: {1}.{2}",
+                                        //                                    pPath,
+                                        //                                    bitstreamSerialNumber.ToString("X8"),
+                                        //                                    Environment.NewLine);
+                                        //ReportProgress(Constants.ProgressMessageOnly, progressStruct);
                                     }
                                 }
-                                //} if (pageType > 0)
-                            
+                            }
+                            //} if (pageType > 0)
+
                             offset += pageSize;
                         }
                         else
