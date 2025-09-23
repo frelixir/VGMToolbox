@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -16,23 +16,23 @@ namespace VGMToolbox.format
 
         // public string FileName { set; get; } // comes from ACB for now, maybe included in archive later?
     }
-    
+
     public class CriAfs2Archive
     {
         public static readonly byte[] SIGNATURE = new byte[] { 0x41, 0x46, 0x53, 0x32 };
-        public const string EXTRACTION_FOLDER_FORMAT = "{0}解包";
+        public const string EXTRACTION_FOLDER_FORMAT = "{0}_Extract";
 
         public string SourceFile { set; get; }
         public byte[] MagicBytes { set; get; }
         public byte[] Version { set; get; }
         public uint FileCount { set; get; }
         public uint ByteAlignment { set; get; }
-        public Dictionary <ushort, CriAfs2File> Files { set; get; }
+        public Dictionary<ushort, CriAfs2File> Files { set; get; }
 
         public CriAfs2Archive(FileStream fs, long offset)
         {
             ushort previousCueId = ushort.MaxValue;
-            
+
             if (IsCriAfs2Archive(fs, offset))
             {
                 this.SourceFile = fs.Name;
@@ -53,9 +53,9 @@ namespace VGMToolbox.format
 
                 if (this.FileCount > ushort.MaxValue)
                 {
-                    throw new FormatException(String.Format("错误,文件计数超过 ushort 的最大值,Please report this at official feedback forums (see 'Other' menu item).", fs.Name));
+                    throw new FormatException(String.Format("错误,文件计数超过ushort的最大值,请在官方反馈论坛上报告此事(查看'其他'菜单项).", fs.Name));
                 }
-                
+
                 this.ByteAlignment = ParseFile.ReadUshortLE(fs, offset + 0xC);
                 // maybe ushort? 0x172e0020 in "Yurucamp Have a nice day" and 0x2a760020 "Summertime Render Another Horizon", others 0x20
 
@@ -79,10 +79,10 @@ namespace VGMToolbox.format
                             break;
                     }
                     dummy.FileOffsetRaw = ParseFile.ReadUintLE(fs, offset + (0x10 + (this.FileCount * this.Version[2]) + (offsetFieldSize * i)));
-                    
+
                     // mask off unneeded info
                     dummy.FileOffsetRaw &= offsetMask;
-                    
+
                     // add offset
                     dummy.FileOffsetRaw += offset;  // for AFS2 files inside of other files (ACB, etc.)
 
@@ -107,19 +107,19 @@ namespace VGMToolbox.format
 
                     // else set length for previous cue id
                     if (previousCueId != ushort.MaxValue)
-                    {                                                
-                        this.Files[previousCueId].FileLength = dummy.FileOffsetRaw - this.Files[previousCueId].FileOffsetByteAligned;                        
-                    } 
+                    {
+                        this.Files[previousCueId].FileLength = dummy.FileOffsetRaw - this.Files[previousCueId].FileOffsetByteAligned;
+                    }
 
                     this.Files.Add(dummy.CueId, dummy);
                     previousCueId = dummy.CueId;
-                } // for (uint i = 0; i < this.FileCount; i++)
+                } // for (ushort i = 0; i < this.FileCount; i++)
 
             }
             else
             {
                 throw new FormatException(String.Format("在偏移处找不到AFS2魔术字节: 0x{0}.", offset.ToString("X8")));
-            }        
+            }
         }
 
         public static bool IsCriAfs2Archive(FileStream fs, long offset)
@@ -130,10 +130,9 @@ namespace VGMToolbox.format
             if (ParseFile.CompareSegment(checkBytes, 0, SIGNATURE))
             {
                 ret = true;
-
             }
 
-            return ret;        
+            return ret;
         }
 
         public void ExtractAll()
@@ -146,21 +145,50 @@ namespace VGMToolbox.format
 
         public void ExtractAllRaw(string destinationFolder)
         {
-            string rawFileFormat = "{0}.{1}.bin";
-            
+            if (!Directory.Exists(destinationFolder))
+            {
+                Directory.CreateDirectory(destinationFolder);
+            }
+
+            string baseFileName = Path.GetFileNameWithoutExtension(this.SourceFile);
+
             using (FileStream fs = File.Open(this.SourceFile, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                
+                int fileIndex = 1;
+
                 foreach (ushort key in this.Files.Keys)
                 {
+                    byte[] fileHeader = ParseFile.ParseSimpleOffset(fs, (long)this.Files[key].FileOffsetByteAligned, 4);
+                    string extension = GetFileExtension(fileHeader);
+
+                    string fileName = $"{baseFileName}_{fileIndex:D2}.{extension}";
+                    string outputPath = Path.Combine(destinationFolder, fileName);
+
                     ParseFile.ExtractChunkToFile64(fs,
                         (ulong)this.Files[key].FileOffsetByteAligned,
                         (ulong)this.Files[key].FileLength,
-                        Path.Combine(destinationFolder,
-                                     String.Format(rawFileFormat, Path.GetFileName(this.SourceFile), key.ToString("D5"))), false, false);
+                        outputPath, false, false);
+
+                    fileIndex++;
                 }
             }
         }
 
+        private string GetFileExtension(byte[] fileHeader)
+        {
+            if (fileHeader.Length >= 4)
+            {
+                if (fileHeader[0] == 0x48 && fileHeader[1] == 0x43 && fileHeader[2] == 0x41 && fileHeader[3] == 0x00)
+                {
+                    return "hca";
+                }
+                else if (fileHeader[0] == 0x52 && fileHeader[1] == 0x49 && fileHeader[2] == 0x46 && fileHeader[3] == 0x46)
+                {
+                    return "at3"; 
+                }
+            }
+
+            return "bin";
+        }
     }
 }
