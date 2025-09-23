@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.IO;
 
@@ -9,7 +9,7 @@ namespace VGMToolbox.tools.extract
 {
     class ExtractCriCpkWorker : AVgmtDragAndDropWorker, IVgmtBackgroundWorker
     {
-        public const string CRI_CPK_EXTRACTION_FOLDER = "{0}CPK解包";
+        public const string CRI_CPK_EXTRACTION_FOLDER = "{0}";
         
         public struct ExtractCriCpkStruct : IVgmtWorkerStruct
         {
