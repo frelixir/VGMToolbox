@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Windows.Forms;
 using VGMToolbox.plugin;
@@ -15,7 +15,7 @@ namespace VGMToolbox.forms.extraction
             // set title
             this.lblTitle.Text = "Sony ADPCM提取器";
             this.tbOutput.Text = "提取索尼ADPCM数据" + Environment.NewLine;
-            this.tbOutput.Text += "-工具仍在进展中,结果仍不稳定(作为一个汉化者我想说的是：这个垃圾功能没用,建议使用我制作的万能二进制提取工具提取pcm).";
+            this.tbOutput.Text += "-工具仍在进展中,结果仍不稳定(作为一个汉化者我想说的是：这个垃圾功能没用,建议使用偏移量查找器里的PlayStation OKI-ADPCM)，也可以下载个PSound试试.";
 
             // hide the DoTask button since this is a drag and drop form
             this.btnDoTask.Hide();
