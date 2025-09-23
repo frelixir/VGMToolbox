@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,7 +27,8 @@ namespace VGMToolbox.tools.extract
         }
 
         public ExtractHcaWorker() :
-            base() { }
+            base()
+        { }
 
         protected override void DoTaskForFile(string pPath, IVgmtWorkerStruct pExtractAdxStruct, DoWorkEventArgs e)
         {
@@ -43,73 +44,83 @@ namespace VGMToolbox.tools.extract
 
             uint blockCount;
             ushort blockSize;
-            
+
             long fileSize;
 
-            int fileCount = 0;
-            string outputPath = Path.Combine(Path.GetDirectoryName(pPath), "hca解包");
+            int fileCount = 1;
+            string sourceFileName = Path.GetFileNameWithoutExtension(pPath);
+            string outputPath = Path.Combine(Path.GetDirectoryName(pPath), sourceFileName);
             string outputFileName;
             string outputFilePath;
 
-            FileInfo fi = new FileInfo(pPath);
+            if (!Directory.Exists(outputPath))
+            {
+                Directory.CreateDirectory(outputPath);
+            }
 
             using (FileStream fs = File.Open(pPath, FileMode.Open, FileAccess.Read))
             {
-                outputPath = Path.Combine(Path.GetDirectoryName(pPath), String.Format("{0}_HCAs", Path.GetFileNameWithoutExtension(pPath)));
-
                 while ((offset = ParseFile.GetNextOffsetMasked(fs, offset, HCA_SIG_BYTES, MASK_BYTES)) > -1)
                 {
-                    if (!this.CancellationPending)
-                    {
-                        // get version
-                        revisionMajor = ParseFile.ReadByte(fs, offset + 4);
-                        revisionMinor = ParseFile.ReadByte(fs, offset + 5);
-
-                        // get data offset
-                        dataOffset = ParseFile.ReadUshortBE(fs, offset + 6);
-
-                        // get 'fmt' chunk offset
-                        fmtChunkOffset = ParseFile.GetNextOffsetMasked(fs, offset, FMT_CHUNK_BYTES, MASK_BYTES);
-
-                        if (fmtChunkOffset > -1)
-                        {
-                            // get block count
-                            blockCount = ParseFile.ReadUintBE(fs, fmtChunkOffset + 8);
-
-                            
-                            // get block size
-                            blockSize = this.getBlockSize(fs, offset);          
-
-
-                            // calculate file size
-                            fileSize = dataOffset + (blockCount * blockSize);
-
-                            // extract file
-                            outputFileName = String.Format("{0}_{1}.hca", Path.GetFileNameWithoutExtension(pPath), fileCount.ToString("X8"));
-                            outputFilePath = Path.Combine(outputPath, outputFileName);
-
-                            this.progressStruct.Clear();
-                            this.progressStruct.GenericMessage = String.Format("{0}-偏移量:0x{1}大小:0x{2}{3}", outputFileName, offset.ToString("X8"), fileSize.ToString("X8"), Environment.NewLine);
-                            ReportProgress(Constants.ProgressMessageOnly, this.progressStruct);
-
-                            ParseFile.ExtractChunkToFile(fs, offset, fileSize, outputFilePath, true, true);
-
-                            // increment counter
-                            fileCount++;
-
-                            // move pointer
-                            offset += fileSize;
-                        }
-                        else
-                        { 
-                            throw new FormatException(String.Format("从0x开始未找到HCA的fmt'块{0}", offset.ToString("X8")));
-                        }                        
-
-                    }
-                    else
+                    if (this.CancellationPending)
                     {
                         e.Cancel = true;
                         return;
+                    }
+
+                    if (offset % 0x10000 == 0 && this.CancellationPending)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
+
+                    // get version
+                    revisionMajor = ParseFile.ReadByte(fs, offset + 4);
+                    revisionMinor = ParseFile.ReadByte(fs, offset + 5);
+
+                    // get data offset
+                    dataOffset = ParseFile.ReadUshortBE(fs, offset + 6);
+
+                    // get 'fmt' chunk offset
+                    fmtChunkOffset = ParseFile.GetNextOffsetMasked(fs, offset, FMT_CHUNK_BYTES, MASK_BYTES);
+
+                    if (fmtChunkOffset > -1)
+                    {
+                        // get block count
+                        blockCount = ParseFile.ReadUintBE(fs, fmtChunkOffset + 8);
+
+                        // get block size
+                        blockSize = this.getBlockSize(fs, offset);
+
+                        // calculate file size
+                        fileSize = dataOffset + (blockCount * blockSize);
+
+                        if (offset + fileSize > fs.Length)
+                        {
+                            fileSize = fs.Length - offset;
+                        }
+
+                        outputFileName = $"{sourceFileName}_{fileCount}.hca";
+                        outputFilePath = Path.Combine(outputPath, outputFileName);
+
+                        while (File.Exists(outputFilePath))
+                        {
+                            fileCount++;
+                            outputFileName = $"{sourceFileName}_{fileCount}.hca";
+                            outputFilePath = Path.Combine(outputPath, outputFileName);
+                        }
+
+                        ExtractChunkToFileFast(fs, offset, fileSize, outputFilePath);
+
+                        // increment counter
+                        fileCount++;
+
+                        // move pointer
+                        offset += fileSize;
+                    }
+                    else
+                    {
+                        offset += 4;
                     }
                 }
             }
@@ -118,16 +129,16 @@ namespace VGMToolbox.tools.extract
         private ushort getBlockSize(Stream inStream, long hcaOffset)
         {
             ushort blockSize = 0;
-            
+
             long decChunkOffset;
             long compChunkOffset;
-            
+
             //----------------
             // 'dec ' offset 
             //----------------
 
             // get 'dec' chunk offset, if exists (v1.3, maybe others?)
-            decChunkOffset = ParseFile.GetNextOffsetWithLimitMasked(inStream, hcaOffset, 
+            decChunkOffset = ParseFile.GetNextOffsetWithLimitMasked(inStream, hcaOffset,
                 hcaOffset + MAX_HEADER_SIZE, DEC_CHUNK_BYTES, MASK_BYTES, true);
 
             if (decChunkOffset > -1)
@@ -149,13 +160,40 @@ namespace VGMToolbox.tools.extract
                     blockSize = ParseFile.ReadUshortBE(inStream, compChunkOffset + 4);
                 }
                 else
-                { 
-                    throw new FormatException(
-                        String.Format("{0}找不到'dec'或'comp'块来确定从0x 开始的HCA的块大小\"", hcaOffset.ToString("X8")));
+                {
+
+                    blockSize = 0x400; 
                 }
             }
 
             return blockSize;
+        }
+
+        private void ExtractChunkToFileFast(FileStream sourceStream, long sourceOffset, long chunkSize, string outputFilePath)
+        {
+            const int BUFFER_SIZE = 64 * 1024;
+            byte[] buffer = new byte[BUFFER_SIZE];
+            long bytesRemaining = chunkSize;
+
+            using (FileStream outputStream = File.Create(outputFilePath))
+            {
+                sourceStream.Seek(sourceOffset, SeekOrigin.Begin);
+
+                while (bytesRemaining > 0)
+                {
+                    if (this.CancellationPending)
+                        break;
+
+                    int bytesToRead = (int)Math.Min(BUFFER_SIZE, bytesRemaining);
+                    int bytesRead = sourceStream.Read(buffer, 0, bytesToRead);
+
+                    if (bytesRead == 0)
+                        break;
+
+                    outputStream.Write(buffer, 0, bytesRead);
+                    bytesRemaining -= bytesRead;
+                }
+            }
         }
     }
 }
