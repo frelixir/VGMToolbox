@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +19,7 @@ namespace VGMToolbox.format
         public const string NULL_FILENAME = "<NULL>";
 
         public static readonly byte[] CRILAYLA_SIGNATURE = new byte[] { 0x43, 0x52, 0x49, 0x4C, 0x41, 0x59, 0x4C, 0x41 };
-        public const string CRI_CPK_EXTRACTION_FOLDER = "{0}提取";
+        public const string CRI_CPK_EXTRACTION_FOLDER = "{0}_Extract";
 
         // public static byte[] CriCpkDecompressionOutputBuffer = new byte[64000000];
 
@@ -156,15 +156,17 @@ namespace VGMToolbox.format
 
         public void ExtractAll()
         {
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(this.SourceFileName);
+
             string extractionDirectoryBase = Path.Combine(Path.GetDirectoryName(this.SourceFileName),
-                    String.Format(CRI_CPK_EXTRACTION_FOLDER, Path.GetFileName(this.SourceFileName)));
+                    String.Format(CRI_CPK_EXTRACTION_FOLDER, fileNameWithoutExtension));
+
             Dictionary<string, FileStream> streamCache = new Dictionary<string, FileStream>();
 
             foreach (CriCpkDirectory ds in this.DirectoryStructureArray)
             {
-                ds.Extract(ref streamCache, extractionDirectoryBase, false);    
+                ds.Extract(ref streamCache, extractionDirectoryBase, false);
             }
-
         }
 
 
@@ -214,7 +216,7 @@ namespace VGMToolbox.format
             object temp;
 
             temp = CriUtfTable.GetUtfFieldForRow(dataUtf, rowIndex, "ID");
-            fileInfo.FileName = temp != null ? ((ushort)temp).ToString("D5") : null;
+            fileInfo.FileName = temp != null ? ((ushort)((ushort)temp + 1)).ToString("D5") : null;
 
             temp = CriUtfTable.GetUtfFieldForRow(dataUtf, rowIndex, "FileSize");
             fileInfo.FileSize = temp != null ? Convert.ToUInt32(temp) : uint.MaxValue;
@@ -833,7 +835,7 @@ namespace VGMToolbox.format
                 return this.FileName.CompareTo(o.FileName);
             }
 
-            throw new ArgumentException("object is not a CriCpkFile");
+            throw new ArgumentException("对象不是一个CriCpk文件");
         }
 
         public CriCpkFile(string parentDirectoryName, string sourceFilePath,
