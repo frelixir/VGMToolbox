@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
+using System.IO;
+using System.Collections.Generic;
 
 using VGMToolbox.format.util;
 using VGMToolbox.plugin;
@@ -21,13 +23,23 @@ namespace VGMToolbox.tools.extract
             public bool UseEndOfTrackMarkerForEof { set; get; }
         }
 
-        public ExtractCdxaWorker():
-            base() { }
+        public ExtractCdxaWorker() :
+            base()
+        { }
 
         protected override void DoTaskForFile(string pPath, IVgmtWorkerStruct pExtractCdxaStruct, DoWorkEventArgs e)
         {
-            ExtractCdxaStruct extractCdxaStruct = (ExtractCdxaStruct) pExtractCdxaStruct;
-            
+            ExtractCdxaStruct extractCdxaStruct = (ExtractCdxaStruct)pExtractCdxaStruct;
+
+            string sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(pPath);
+            string sourceDirectory = Path.GetDirectoryName(pPath);
+            string outputDirectory = Path.Combine(sourceDirectory, sourceFileNameWithoutExtension);
+
+            if (!Directory.Exists(outputDirectory))
+            {
+                Directory.CreateDirectory(outputDirectory);
+            }
+
             ExtractXaStruct extStruct = new ExtractXaStruct();
             extStruct.Path = pPath;
             extStruct.AddRiffHeader = extractCdxaStruct.AddRiffHeader;
@@ -39,7 +51,10 @@ namespace VGMToolbox.tools.extract
             extStruct.UseEndOfTrackMarkerForEof = extractCdxaStruct.UseEndOfTrackMarkerForEof;
             extStruct.UseSilentBlocksForEof = extractCdxaStruct.UseSilentBlocksForEof;
 
-            CdxaUtil.ExtractXaFiles(extStruct);            
-        }       
+            extStruct.OutputDirectory = outputDirectory;
+            extStruct.SourceFileNameWithoutExtension = sourceFileNameWithoutExtension;
+
+            CdxaUtil.ExtractXaFiles(extStruct);
+        }
     }
 }
