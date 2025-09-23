@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -47,6 +47,8 @@ namespace VGMToolbox.format.util
 
         public bool UseSilentBlocksForEof { set; get; }
         public bool UseEndOfTrackMarkerForEof { set; get; }
+        public string OutputDirectory { set; get; }
+        public string SourceFileNameWithoutExtension { set; get; }
     }
 
     public struct CdxaWriterStruct
@@ -357,20 +359,50 @@ namespace VGMToolbox.format.util
 
         private static string GetOutputFileName(ExtractXaStruct pExtractXaStruct, byte[] pTrackId)
         {
-            string outputDirectory = Path.Combine(Path.GetDirectoryName(pExtractXaStruct.Path),
-                Path.GetFileNameWithoutExtension(pExtractXaStruct.Path));
-            string outputFileName = Path.GetFileNameWithoutExtension(pExtractXaStruct.Path) + "_" + ParseFile.ByteArrayToString(pTrackId) + Cdxa.XA_FILE_EXTENSION;
+            string outputDirectory;
+            string outputFileName;
 
-            int fileCount = Directory.GetFiles(outputDirectory, String.Format("{0}*", Path.GetFileNameWithoutExtension(outputFileName)), SearchOption.TopDirectoryOnly).Length;
-            outputFileName = String.Format("{0}_{1}{2}", Path.GetFileNameWithoutExtension(outputFileName), fileCount.ToString("X4"), Cdxa.XA_FILE_EXTENSION);
+            if (!string.IsNullOrEmpty(pExtractXaStruct.OutputDirectory))
+            {
+                outputDirectory = pExtractXaStruct.OutputDirectory;
+            }
+            else
+            {
+                outputDirectory = Path.Combine(Path.GetDirectoryName(pExtractXaStruct.Path),
+                    Path.GetFileNameWithoutExtension(pExtractXaStruct.Path));
+            }
 
-            //if (outputFileName.Equals("BGM2_01016401_0005.xa"))
-            //{
-            //    int x = 1;
-            //}
+            string baseFileName;
+            if (!string.IsNullOrEmpty(pExtractXaStruct.SourceFileNameWithoutExtension))
+            {
+                baseFileName = pExtractXaStruct.SourceFileNameWithoutExtension;
+            }
+            else
+            {
+                baseFileName = Path.GetFileNameWithoutExtension(pExtractXaStruct.Path);
+            }
+
+            string searchPattern = $"{baseFileName}_*{Cdxa.XA_FILE_EXTENSION}";
+            string[] existingFiles = Directory.GetFiles(outputDirectory, searchPattern, SearchOption.TopDirectoryOnly);
+
+            int nextNumber = 1;
+            foreach (string file in existingFiles)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(file);
+                string[] parts = fileName.Split('_');
+                if (parts.Length > 1 && int.TryParse(parts[parts.Length - 1], out int fileNumber))
+                {
+                    if (fileNumber >= nextNumber)
+                    {
+                        nextNumber = fileNumber + 1;
+                    }
+                }
+            }
+
+            outputFileName = $"{baseFileName}_{nextNumber}{Cdxa.XA_FILE_EXTENSION}";
 
             string ret = Path.Combine(outputDirectory, outputFileName);
-            
+
             return ret;
         }
 
