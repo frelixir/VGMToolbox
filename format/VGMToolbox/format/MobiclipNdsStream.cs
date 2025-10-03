@@ -234,7 +234,7 @@ namespace VGMToolbox.format
   </startup>
   <appSettings>
     <add key=""ffmpegPath"" value=""ffmpeg.exe""/>
-    <add key=""options"" value=""-c:v libx265 -preset fast -b:v 20M -r 60 -crf 16 -vf scale=2048:1080 -hide_banner""/>
+    <add key=""options"" value=""-c:v libx265 -preset medium -crf 14 -r 60 -vf scale=2048:1080:flags=lanczos+full_chroma_inp+full_chroma_int -pix_fmt yuv420p10le -x265-params profile=main10:high-tier=1:level=6.2:aq-mode=3:deblock=-1,-1 -movflags +faststart -hide_banner""/>
     <add key=""stereoTarget"" value=""sbs2l""/>
     <add key=""maxQueueSize"" value=""256""/>
   </appSettings>
