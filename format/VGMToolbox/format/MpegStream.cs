@@ -309,7 +309,7 @@ namespace VGMToolbox.format
                                                 blockSize = (uint)blockSizeArray[0];
                                                 break;
                                             default:
-                                                throw new ArgumentOutOfRangeException(String.Format("Unhandled size block size.{0}", Environment.NewLine));
+                                                throw new ArgumentOutOfRangeException(String.Format("未处理的大小块大小.{0}", Environment.NewLine));
                                         }
 
 
@@ -432,14 +432,14 @@ namespace VGMToolbox.format
                         catch (Exception _ex)
                         {
                             this.closeAllWriters(streamOutputWriters);
-                            throw new Exception(String.Format("Error parsing file at offset {0), '{1}'", currentOffset.ToString("X8"), _ex.Message), _ex);
+                            throw new Exception(String.Format("在偏移量{0)处解析文件时出错, '{1}'", currentOffset.ToString("X8"), _ex.Message), _ex);
                         }
                     } // while (currentOffset < fileSize)
                 }
                 else
                 {
                     this.closeAllWriters(streamOutputWriters);
-                    throw new FormatException(String.Format("Cannot find Pack Header for file: {0}{1}", Path.GetFileName(this.FilePath), Environment.NewLine));
+                    throw new FormatException(String.Format("无法找到文件的封装头:{0}{1}", Path.GetFileName(this.FilePath), Environment.NewLine));
                 }
 
                 ///////////////////////////////////
@@ -496,7 +496,7 @@ namespace VGMToolbox.format
                 }
                 else
                 {
-                    throw new FormatException(String.Format("Cannot find Pack Header for file: {0}{1}", Path.GetFileName(path), Environment.NewLine));
+                    throw new FormatException(String.Format("无法找到文件的封装头:{0}{1}", Path.GetFileName(path), Environment.NewLine));
                 }
             }
 
