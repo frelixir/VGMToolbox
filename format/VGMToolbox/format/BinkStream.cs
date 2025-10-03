@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -11,8 +11,8 @@ namespace VGMToolbox.format
     {
         public enum BinkType { Version01, Version02 };
 
-        const string DefaultFileExtensionAudioMulti = ".音频.multi.bik";
-        const string DefaultFileExtensionAudioSplit = ".音频.split.bik";
+        const string DefaultFileExtensionAudioMulti = ".multi.bik";
+        const string DefaultFileExtensionAudioSplit = ".split.bik";
         const string DefaultFileExtensionVideo = ".视频.bik";
 
         public uint FrameCount { set; get; }
@@ -76,17 +76,17 @@ namespace VGMToolbox.format
         }
 
         private void writeChunkToStream(
-            byte[] chunk,
-            uint chunkId,
-            Dictionary<uint, FileStream> streamWriters,
-            string fileExtension)
+    byte[] chunk,
+    uint chunkId,
+    Dictionary<uint, FileStream> streamWriters,
+    string fileExtension)
         {
             string destinationFile;
 
             if (!streamWriters.ContainsKey(chunkId))
             {
                 destinationFile = Path.Combine(Path.GetDirectoryName(this.FilePath),
-                    String.Format("{0}_{1}{2}", Path.GetFileNameWithoutExtension(this.FilePath), chunkId.ToString("X8"), fileExtension));
+                    String.Format("{0}{1}", Path.GetFileNameWithoutExtension(this.FilePath), fileExtension));
                 streamWriters[chunkId] = File.Open(destinationFile, FileMode.Create, FileAccess.ReadWrite);
             }
 
@@ -691,4 +691,3 @@ namespace VGMToolbox.format
     }
 
 }
-
