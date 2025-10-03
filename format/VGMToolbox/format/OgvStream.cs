@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -99,9 +99,20 @@ namespace VGMToolbox.format
 
             string outputDirectory = Path.GetDirectoryName(sourcePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourcePath);
-            string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}.mp4");
+            string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}_ultimate.mp4");
 
-            string arguments = $"-i \"{sourcePath}\" -c:v libx265 -b:v 20M -r 60 -crf 16 -preset fast -vf \"scale=2048:1080\" -c:a aac -b:a 1536k -ac 2 \"{outputFile}\" -y";
+            string arguments = $"-i \"{sourcePath}\" " +
+                               "-c:v libx265 " +
+                               "-preset medium " +       
+                               "-crf 14 " +              
+                               "-r 60 " +
+                               "-vf \"scale=2048:1080:flags=lanczos+full_chroma_inp+full_chroma_int\" " + 
+                               "-pix_fmt yuv420p10le " +   
+                               "-x265-params \"profile=main10:high-tier=1:level=6.2:aq-mode=3:deblock=-1,-1\" " +
+                               "-c:a aac " +
+                               "-b:a 320k " +               
+                               "-movflags +faststart " +    
+                               $"\"{outputFile}\" -y";
 
             Console.WriteLine($"执行FFmpeg命令: ffmpeg {arguments}");
 
@@ -168,6 +179,7 @@ namespace VGMToolbox.format
                 }
 
                 Console.WriteLine($"OGV文件转换完成: {outputFile} (大小: {outputInfo.Length} 字节)");
+                Console.WriteLine("使用极致质量参数: CRF 14, 10bit色彩, Lanczos高质量缩放");
             }
         }
     }
