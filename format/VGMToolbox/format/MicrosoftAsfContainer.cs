@@ -120,7 +120,18 @@ namespace VGMToolbox.format
         {
             string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}{DefaultFileExtensionMp4}");
 
-            string arguments = $"-i \"{sourcePath}\" -c:v libx265 -b:v 20M -r 60 -crf 16 -preset fast -vf \"scale=2048:1080\" -c:a aac -b:a 1536k -ac 2 \"{outputFile}\" -y";
+            string arguments = $"-i \"{sourcePath}\" " +
+                               "-c:v libx265 " +
+                               "-preset medium " +
+                               "-crf 14 " +
+                               "-r 60 " +
+                               "-vf \"scale=2048:1080:flags=lanczos+full_chroma_inp+full_chroma_int\" " +
+                               "-pix_fmt yuv420p10le " +
+                               "-x265-params \"profile=main10:high-tier=1:level=6.2:aq-mode=3:deblock=-1,-1\" " +
+                               "-c:a aac " +
+                               "-b:a 320k " +
+                               "-movflags +faststart " +
+                               $"\"{outputFile}\" -y";
 
             Console.WriteLine($"执行FFmpeg命令: ffmpeg {arguments}");
 
