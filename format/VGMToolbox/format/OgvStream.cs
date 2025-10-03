@@ -99,7 +99,7 @@ namespace VGMToolbox.format
 
             string outputDirectory = Path.GetDirectoryName(sourcePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourcePath);
-            string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}_ultimate.mp4");
+            string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}.mp4");
 
             string arguments = $"-i \"{sourcePath}\" " +
                                "-c:v libx265 " +
@@ -184,3 +184,4 @@ namespace VGMToolbox.format
         }
     }
 }
+
