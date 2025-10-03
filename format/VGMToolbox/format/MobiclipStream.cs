@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -163,7 +163,7 @@ namespace VGMToolbox.format
                 this.DoFinalTasks(streamOutputWriters, demuxOptions);
             }
         }
-        
+
 
         public static MovieType GetMobiclipStreamType(string path)
         {
@@ -171,19 +171,28 @@ namespace VGMToolbox.format
 
             using (FileStream fs = File.OpenRead(path))
             {
-                byte[] typeBytes = ParseFile.ParseSimpleOffset(fs, 2, 2);
+                byte[] ndsMagicBytes = new byte[] { 0x4C, 0x32 };
+                byte[] actualHeaderBytes = ParseFile.ParseSimpleOffset(fs, 0, 2);
 
-                if (ParseFile.CompareSegment(typeBytes, 0, MobiclipNdsStream.StreamTypeBytes))
+                if (ParseFile.CompareSegment(actualHeaderBytes, 0, ndsMagicBytes))
                 {
                     streamType = MovieType.NintendoDs;
                 }
-                else if (ParseFile.CompareSegment(typeBytes, 0, MobiclipWiiStream.StreamTypeBytes))
+                else
                 {
-                    streamType = MovieType.Wii;
+                    byte[] typeBytes = ParseFile.ParseSimpleOffset(fs, 2, 2);
+                    if (ParseFile.CompareSegment(typeBytes, 0, MobiclipWiiStream.StreamTypeBytes))
+                    {
+                        streamType = MovieType.Wii;
+                    }
+                    else
+                    {
+                        streamType = MovieType.Unknown;
+                    }
                 }
             }
 
             return streamType;
-        }        
+        }
     }
 }
