@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -342,8 +342,11 @@ namespace VGMToolbox.format
 
                                                 // build output file name
                                                 outputFileName = Path.GetFileNameWithoutExtension(this.FilePath);
-                                                outputFileName = outputFileName + "_" + BitConverter.ToUInt32(currentBlockIdNaming, 0).ToString("X8");
 
+                                                if (this.IsThisAnAudioBlock(currentBlockId) && streamId > 0)
+                                                {
+                                                    outputFileName += $"_track{streamId}";
+                                                }
                                                 // add proper extension
                                                 if (this.IsThisAnAudioBlock(currentBlockId))
                                                 {
