@@ -41,8 +41,7 @@ namespace VGMToolbox.tools.stream
 
             switch (demuxStruct.SourceFormat)
             {
-                case "ASF (MS高级系统格式)":
-                case "WMV (MS高级系统格式)":
+                case "ASF/WMV (MS高级系统格式)":
                     MicrosoftAsfContainer asfStream = new MicrosoftAsfContainer(path);
                     asfStream.DemultiplexStreams(demuxOptions);
                     break;
@@ -75,10 +74,10 @@ namespace VGMToolbox.tools.stream
 
                     switch (movieType)
                     {
-                        //case MobiclipStream.MovieType.NintendoDs:
-                        //    MobiclipNdsStream mobiclipNdsStream = new MobiclipNdsStream(path);
-                        //    mobiclipNdsStream.DemultiplexStreams(demuxOptions);
-                        //    break;
+                        case MobiclipStream.MovieType.NintendoDs:
+                            MobiclipNdsStream mobiclipNdsStream = new MobiclipNdsStream(path);
+                            mobiclipNdsStream.DemultiplexStreams(demuxOptions);
+                            break;
                         case MobiclipStream.MovieType.Wii:
                             MobiclipWiiStream mobiclipWiiStream = new MobiclipWiiStream(path);
                             mobiclipWiiStream.DemultiplexStreams(demuxOptions);
@@ -86,7 +85,6 @@ namespace VGMToolbox.tools.stream
                         default:
                             throw new FormatException(String.Format("文件不支持的Mobiclip类型: {0}", Path.GetFileName(path)));
                     }
-
                     break;
                 case "MPEG":
                     int mpegType = MpegStream.GetMpegStreamType(path);
@@ -143,7 +141,18 @@ namespace VGMToolbox.tools.stream
                     XmvStream xmv = new XmvStream(path);
                     xmv.DemultiplexStreams(demuxOptions);
                     break;
-
+                case "AMV (Alpha Movie)":
+                    AmvStream amvStream = new AmvStream(path);
+                    amvStream.DemultiplexStreams(demuxOptions);
+                    break;
+                case "CMV (紫社CMVS引擎)":
+                    CmvStream cmvStream = new CmvStream(path);
+                    cmvStream.DemultiplexStreams(demuxOptions);
+                    break;
+                case "OGV (Ogg视频)":
+                    OgvStream omvStream = new OgvStream(path);
+                    omvStream.DemultiplexStreams(demuxOptions);
+                    break;
                 default:
                     throw new FormatException("源格式未定义.");
             }
