@@ -118,16 +118,6 @@ namespace VGMToolbox.format
                 CreateDefaultMobiusConfig(mobiusPath);
             }
 
-            string ffmpegInMobiusDir = Path.Combine(Path.GetDirectoryName(mobiusPath), "ffmpeg.exe");
-            if (!File.Exists(ffmpegInMobiusDir))
-            {
-                string systemFfmpeg = FindExecutablePath("ffmpeg");
-                if (string.IsNullOrEmpty(systemFfmpeg))
-                {
-                    throw new Exception("未找到ffmpeg.exe");
-                }
-            }
-
             if (!File.Exists(sourcePath))
             {
                 throw new FileNotFoundException($"源文件未找到: {sourcePath}");
@@ -156,72 +146,15 @@ namespace VGMToolbox.format
                     process.StartInfo = startInfo;
                     process.Start();
 
-                    bool processExited = process.WaitForExit(300000);
-
-                    if (!processExited)
-                    {
-                        process.Kill();
-                        throw new Exception("Mobius转换超时");
-                    }
+                    process.WaitForExit();
 
                     Thread.Sleep(2000);
-
-                    if (!File.Exists(outputFile))
-                    {
-                        throw new Exception("MP4文件未生成");
-                    }
-
-                    if (!IsValidMp4File(outputFile))
-                    {
-                        throw new Exception("生成的MP4文件无效或损坏");
-                    }
-
-                    Console.WriteLine($"成功转换: {Path.GetFileName(sourcePath)} -> {Path.GetFileName(outputFile)}");
+                    Console.WriteLine($"转换完成: {Path.GetFileName(sourcePath)} -> {Path.GetFileName(outputFile)}");
                 }
             }
             catch (Exception ex)
             {
-                try
-                {
-                    if (File.Exists(outputFile))
-                    {
-                        FileInfo fileInfo = new FileInfo(outputFile);
-                        if (fileInfo.Length < 1024)
-                        {
-                            File.Delete(outputFile);
-                        }
-                    }
-                }
-                catch
-                {
-                }
-
                 throw new Exception($"转换MOFLEX文件时出错: {ex.Message}");
-            }
-        }
-
-        private bool IsValidMp4File(string filePath)
-        {
-            try
-            {
-                if (!File.Exists(filePath)) return false;
-
-                FileInfo fileInfo = new FileInfo(filePath);
-                if (fileInfo.Length < 10240) return false;
-
-                using (FileStream fs = File.OpenRead(filePath))
-                {
-                    byte[] header = new byte[8];
-                    if (fs.Read(header, 0, 8) == 8)
-                    {
-                        return header[4] == 'f' && header[5] == 't' && header[6] == 'y' && header[7] == 'p';
-                    }
-                }
-                return false;
-            }
-            catch
-            {
-                return false;
             }
         }
 
