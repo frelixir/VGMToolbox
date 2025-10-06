@@ -1,180 +1,263 @@
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Diagnostics;
 using System.Text;
-using System.Threading;
-using VGMToolbox.util;
 
 namespace VGMToolbox.format
 {
-    public class MobiclipNdsStream
+    public class MicrosoftAsfContainer
     {
+        const string DefaultFileExtensionAudio = ".raw.wma";
+        const string DefaultFileExtensionVideo = ".raw.wmv";
+        const string DefaultFileExtensionMp4 = ".mp4";
+
+        public static readonly byte[] ASF_HEADER_BYTES = new byte[] {
+            0x30, 0x26, 0xB2, 0x75,
+            0x8E, 0x66, 0xCF, 0x11,
+            0xA6, 0xD9, 0x00, 0xAA,
+            0x00, 0x62, 0xCE, 0x6C
+        };
+
         private string sourcePath;
 
-        public MobiclipNdsStream(string path)
+        public MicrosoftAsfContainer(string path)
         {
             this.sourcePath = path;
         }
 
-        private string FindMobiusPath()
-        {
-            string currentDirMobius = Path.Combine(Directory.GetCurrentDirectory(), "Mobius.exe");
-            if (File.Exists(currentDirMobius))
-            {
-                return currentDirMobius;
-            }
-
-            string ffmpegPath = FindExecutablePath("ffmpeg");
-            if (!string.IsNullOrEmpty(ffmpegPath))
-            {
-                string ffmpegDir = Path.GetDirectoryName(ffmpegPath);
-                string mobiusPath = Path.Combine(ffmpegDir, "Mobius.exe");
-                if (File.Exists(mobiusPath))
-                {
-                    return mobiusPath;
-                }
-            }
-
-            string mobiusInPath = FindExecutablePath("Mobius.exe");
-            if (!string.IsNullOrEmpty(mobiusInPath))
-            {
-                return mobiusInPath;
-            }
-
-            return null;
-        }
-
-        private string FindExecutablePath(string executableName)
+        private bool IsFfmpegAvailable()
         {
             try
             {
-                if (File.Exists(executableName))
+                ProcessStartInfo startInfo = new ProcessStartInfo
                 {
-                    return Path.GetFullPath(executableName);
-                }
+                    FileName = "ffmpeg",
+                    Arguments = "-version",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true
+                };
 
-                string pathEnv = Environment.GetEnvironmentVariable("PATH");
-                if (!string.IsNullOrEmpty(pathEnv))
+                using (Process process = Process.Start(startInfo))
                 {
-                    string[] paths = pathEnv.Split(Path.PathSeparator);
-                    foreach (string path in paths)
-                    {
-                        try
-                        {
-                            string fullPath = Path.Combine(path, executableName);
-                            if (File.Exists(fullPath))
-                            {
-                                return fullPath;
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-                }
-
-                if (!executableName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                {
-                    return FindExecutablePath(executableName + ".exe");
+                    process.WaitForExit(5000);
+                    return process.ExitCode == 0;
                 }
             }
             catch
             {
-            }
-
-            return null;
-        }
-
-        public void DemultiplexStreams(MpegStream.DemuxOptionsStruct demuxOptions)
-        {
-            using (FileStream fs = File.OpenRead(sourcePath))
-            {
-                byte[] ndsMagicBytes = new byte[] { 0x4C, 0x32 };
-                byte[] actualHeaderBytes = ParseFile.ParseSimpleOffset(fs, 0, 2);
-
-                if (ParseFile.CompareSegment(actualHeaderBytes, 0, ndsMagicBytes))
-                {
-                    ConvertWithMobius();
-                }
-                else
-                {
-                    throw new Exception("不支持的NDS Mobiclip格式");
-                }
+                return false;
             }
         }
 
-        private void ConvertWithMobius()
+        private bool IsValidAsfFile()
         {
-            string mobiusPath = FindMobiusPath();
-            if (string.IsNullOrEmpty(mobiusPath) || !File.Exists(mobiusPath))
-            {
-                throw new Exception("未找到Mobius.exe");
-            }
-
-            string configPath = Path.Combine(Path.GetDirectoryName(mobiusPath), "Mobius.exe.config");
-            if (!File.Exists(configPath))
-            {
-                CreateDefaultMobiusConfig(mobiusPath);
-            }
-
-            if (!File.Exists(sourcePath))
-            {
-                throw new FileNotFoundException($"源文件未找到: {sourcePath}");
-            }
-
-            string outputFile = Path.ChangeExtension(sourcePath, ".mp4");
-
-            if (File.Exists(outputFile))
-            {
-                File.Delete(outputFile);
-            }
-
-            ProcessStartInfo startInfo = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = $"/c \"\"{mobiusPath}\" \"{sourcePath}\" && exit\"",
-                UseShellExecute = true,
-                CreateNoWindow = false,
-                WorkingDirectory = Path.GetDirectoryName(mobiusPath)
-            };
-
             try
             {
-                using (Process process = new Process())
+                using (FileStream fs = File.OpenRead(sourcePath))
                 {
-                    process.StartInfo = startInfo;
-                    process.Start();
+                    byte[] header = new byte[ASF_HEADER_BYTES.Length];
+                    int bytesRead = fs.Read(header, 0, header.Length);
 
-                    process.WaitForExit();
+                    if (bytesRead != header.Length)
+                    {
+                        return false;
+                    }
 
-                    Thread.Sleep(2000);
-                    Console.WriteLine($"转换完成: {Path.GetFileName(sourcePath)} -> {Path.GetFileName(outputFile)}");
+                    for (int i = 0; i < ASF_HEADER_BYTES.Length; i++)
+                    {
+                        if (header[i] != ASF_HEADER_BYTES[i])
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
                 }
             }
             catch (Exception ex)
             {
-                throw new Exception($"转换MOFLEX文件时出错: {ex.Message}");
+                Console.WriteLine($"检查ASF文件头时出错: {ex.Message}");
+                return false;
             }
         }
 
-        private void CreateDefaultMobiusConfig(string mobiusPath)
+        public void DemultiplexStreams(MpegStream.DemuxOptionsStruct demuxOptions)
         {
-            string configContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
-<configuration>
-  <startup> 
-    <supportedRuntime version=""v4.0"" sku="".NETFramework,Version=v4.7""/>
-  </startup>
-  <appSettings>
-    <add key=""ffmpegPath"" value=""ffmpeg.exe""/>
-    <add key=""options"" value=""-c:v libx265 -preset medium -crf 14 -r 60 -vf scale=2048:1080:flags=lanczos+full_chroma_inp+full_chroma_int -pix_fmt yuv420p10le -x265-params profile=main10:high-tier=1:level=6.2:aq-mode=3:deblock=-1,-1 -movflags +faststart -hide_banner""/>
-    <add key=""stereoTarget"" value=""sbs2l""/>
-    <add key=""maxQueueSize"" value=""256""/>
-  </appSettings>
-</configuration>";
+            if (!IsFfmpegAvailable())
+            {
+                throw new Exception("未检测到FFmpeg，请安装FFmpeg并添加到系统环境变量");
+            }
 
-            string configPath = Path.Combine(Path.GetDirectoryName(mobiusPath), "Mobius.exe.config");
-            File.WriteAllText(configPath, configContent);
+            if (!File.Exists(sourcePath))
+            {
+                throw new FileNotFoundException($"文件未找到: {sourcePath}");
+            }
+
+            if (!IsValidAsfFile())
+            {
+                throw new Exception("不是有效的ASF格式文件（文件头不匹配）");
+            }
+
+            string outputDirectory = Path.GetDirectoryName(sourcePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourcePath);
+
+            if (demuxOptions.ExtractAudio && demuxOptions.ExtractVideo)
+            {
+                ConvertToMp4(outputDirectory, fileNameWithoutExtension);
+            }
+            else if (demuxOptions.ExtractAudio)
+            {
+                ExtractAudioOnly(outputDirectory, fileNameWithoutExtension);
+            }
+            else if (demuxOptions.ExtractVideo)
+            {
+                ExtractVideoOnly(outputDirectory, fileNameWithoutExtension);
+            }
+        }
+
+        private void ConvertToMp4(string outputDirectory, string fileNameWithoutExtension)
+        {
+            string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}{DefaultFileExtensionMp4}");
+
+            string arguments = $"-i \"{sourcePath}\" " +
+                               "-c:v libx265 " +
+                               "-preset medium " +
+                               "-crf 14 " +
+                               "-r 60 " +
+                               "-vf \"scale=2048:1080:flags=lanczos+full_chroma_inp+full_chroma_int\" " +
+                               "-pix_fmt yuv420p10le " +
+                               "-x265-params \"profile=main10:high-tier=1:level=6.2:aq-mode=3:deblock=-1,-1\" " +
+                               "-c:a aac " +
+                               "-b:a 320k " +
+                               "-movflags +faststart " +
+                               $"\"{outputFile}\" -y";
+
+            Console.WriteLine($"执行FFmpeg命令: ffmpeg {arguments}");
+
+            ExecuteFfmpegCommand(arguments, outputDirectory, "MP4转换");
+        }
+
+        private void ExtractAudioOnly(string outputDirectory, string fileNameWithoutExtension)
+        {
+            string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}{DefaultFileExtensionAudio}");
+
+            string arguments = $"-i \"{sourcePath}\" -c:a copy \"{outputFile}\" -y";
+
+            Console.WriteLine($"执行FFmpeg命令: ffmpeg {arguments}");
+
+            ExecuteFfmpegCommand(arguments, outputDirectory, "音频提取");
+        }
+
+        private void ExtractVideoOnly(string outputDirectory, string fileNameWithoutExtension)
+        {
+            string outputFile = Path.Combine(outputDirectory, $"{fileNameWithoutExtension}{DefaultFileExtensionVideo}");
+
+            string arguments = $"-i \"{sourcePath}\" -an -c:v copy \"{outputFile}\" -y";
+
+            Console.WriteLine($"执行FFmpeg命令: ffmpeg {arguments}");
+
+            ExecuteFfmpegCommand(arguments, outputDirectory, "视频提取");
+        }
+
+        private void ExecuteFfmpegCommand(string arguments, string workingDirectory, string operationName)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = arguments,
+                WorkingDirectory = workingDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            StringBuilder errorOutput = new StringBuilder();
+            StringBuilder output = new StringBuilder();
+
+            using (Process process = new Process())
+            {
+                process.StartInfo = startInfo;
+
+                process.OutputDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        Console.WriteLine($"FFmpeg输出: {e.Data}");
+                        output.AppendLine(e.Data);
+                    }
+                };
+
+                process.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        Console.WriteLine($"FFmpeg进度: {e.Data}");
+                        errorOutput.AppendLine(e.Data);
+                    }
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                process.WaitForExit();
+
+                Console.WriteLine($"=== FFmpeg {operationName} 完整输出 ===");
+                Console.WriteLine(output.ToString());
+                Console.WriteLine($"=== FFmpeg {operationName} 错误输出 ===");
+                Console.WriteLine(errorOutput.ToString());
+
+                if (process.ExitCode != 0)
+                {
+                    throw new Exception($"FFmpeg {operationName} 返回错误代码: {process.ExitCode}\n错误信息: {errorOutput.ToString()}");
+                }
+
+                string outputFile = arguments.Split('"')[arguments.Split('"').Length - 2];
+                if (!File.Exists(outputFile))
+                {
+                    throw new FileNotFoundException($"FFmpeg未生成输出文件: {outputFile}");
+                }
+
+                FileInfo outputInfo = new FileInfo(outputFile);
+                if (outputInfo.Length == 0)
+                {
+                    throw new Exception($"生成的{operationName}文件为空");
+                }
+
+                Console.WriteLine($"{operationName}完成: {outputFile} (大小: {outputInfo.Length} 字节)");
+            }
+        }
+
+        public static bool IsAsfFile(string filePath)
+        {
+            try
+            {
+                using (FileStream fs = File.OpenRead(filePath))
+                {
+                    byte[] header = new byte[ASF_HEADER_BYTES.Length];
+                    int bytesRead = fs.Read(header, 0, header.Length);
+
+                    if (bytesRead != header.Length)
+                    {
+                        return false;
+                    }
+
+                    for (int i = 0; i < ASF_HEADER_BYTES.Length; i++)
+                    {
+                        if (header[i] != ASF_HEADER_BYTES[i])
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
