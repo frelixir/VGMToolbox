@@ -1,4 +1,4 @@
-﻿namespace VGMToolbox.forms.extraction
+namespace VGMToolbox.forms.extraction
 {
     partial class OffsetFinderForm
     {
@@ -37,6 +37,12 @@
             this.tbSourcePaths = new System.Windows.Forms.TextBox();
             this.comboPresets = new System.Windows.Forms.ComboBox();
             this.grpCriteria = new System.Windows.Forms.GroupBox();
+            this.tbOffsetCount = new System.Windows.Forms.TextBox();
+            this.lblOffsetCount = new System.Windows.Forms.Label();
+            this.tbOffsetBytes = new System.Windows.Forms.TextBox();
+            this.cbUseOffsetBytes = new System.Windows.Forms.CheckBox();
+            this.tbOffsetString = new System.Windows.Forms.TextBox();
+            this.cbUseOffsetString = new System.Windows.Forms.CheckBox();
             this.tbOffsetModuloSearchStringResult = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.tbOffsetModuloSearchStringDivisor = new System.Windows.Forms.TextBox();
@@ -74,6 +80,7 @@
             this.rbOffsetBasedCutSize = new System.Windows.Forms.RadioButton();
             this.rbStaticCutSize = new System.Windows.Forms.RadioButton();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.cbOutputLogFile = new System.Windows.Forms.CheckBox();
             this.btnBrowseOutputFolder = new System.Windows.Forms.Button();
             this.tbOutputFolder = new System.Windows.Forms.TextBox();
             this.lblOutputFolder = new System.Windows.Forms.Label();
@@ -86,7 +93,6 @@
             this.tbOutputExtension = new System.Windows.Forms.TextBox();
             this.lblOutputExtension = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.cbOutputLogFile = new System.Windows.Forms.CheckBox();
             this.pnlLabels.SuspendLayout();
             this.pnlTitle.SuspendLayout();
             this.pnlButtons.SuspendLayout();
@@ -213,6 +219,12 @@
             // 
             // grpCriteria
             // 
+            this.grpCriteria.Controls.Add(this.tbOffsetCount);
+            this.grpCriteria.Controls.Add(this.lblOffsetCount);
+            this.grpCriteria.Controls.Add(this.tbOffsetBytes);
+            this.grpCriteria.Controls.Add(this.cbUseOffsetBytes);
+            this.grpCriteria.Controls.Add(this.tbOffsetString);
+            this.grpCriteria.Controls.Add(this.cbUseOffsetString);
             this.grpCriteria.Controls.Add(this.tbOffsetModuloSearchStringResult);
             this.grpCriteria.Controls.Add(this.label1);
             this.grpCriteria.Controls.Add(this.tbOffsetModuloSearchStringDivisor);
@@ -225,10 +237,66 @@
             this.grpCriteria.Dock = System.Windows.Forms.DockStyle.Top;
             this.grpCriteria.Location = new System.Drawing.Point(0, 87);
             this.grpCriteria.Name = "grpCriteria";
-            this.grpCriteria.Size = new System.Drawing.Size(716, 64);
+            this.grpCriteria.Size = new System.Drawing.Size(716, 165);
             this.grpCriteria.TabIndex = 6;
             this.grpCriteria.TabStop = false;
             this.grpCriteria.Text = "标准";
+            // 
+            // tbOffsetCount
+            // 
+            this.tbOffsetCount.Enabled = false;
+            this.tbOffsetCount.Location = new System.Drawing.Point(150, 140);
+            this.tbOffsetCount.Name = "tbOffsetCount";
+            this.tbOffsetCount.Size = new System.Drawing.Size(60, 20);
+            this.tbOffsetCount.TabIndex = 32;
+            // 
+            // lblOffsetCount
+            // 
+            this.lblOffsetCount.AutoSize = true;
+            this.lblOffsetCount.Enabled = false;
+            this.lblOffsetCount.Location = new System.Drawing.Point(9, 143);
+            this.lblOffsetCount.Name = "lblOffsetCount";
+            this.lblOffsetCount.Size = new System.Drawing.Size(67, 13);
+            this.lblOffsetCount.TabIndex = 31;
+            this.lblOffsetCount.Text = "偏移数量：";
+            // 
+            // tbOffsetBytes
+            // 
+            this.tbOffsetBytes.Enabled = false;
+            this.tbOffsetBytes.Location = new System.Drawing.Point(150, 115);
+            this.tbOffsetBytes.Name = "tbOffsetBytes";
+            this.tbOffsetBytes.Size = new System.Drawing.Size(200, 20);
+            this.tbOffsetBytes.TabIndex = 30;
+            // 
+            // cbUseOffsetBytes
+            // 
+            this.cbUseOffsetBytes.AutoSize = true;
+            this.cbUseOffsetBytes.Location = new System.Drawing.Point(9, 117);
+            this.cbUseOffsetBytes.Name = "cbUseOffsetBytes";
+            this.cbUseOffsetBytes.Size = new System.Drawing.Size(135, 17);
+            this.cbUseOffsetBytes.TabIndex = 29;
+            this.cbUseOffsetBytes.Text = "使用偏移字节序列验证";
+            this.cbUseOffsetBytes.UseVisualStyleBackColor = true;
+            this.cbUseOffsetBytes.CheckedChanged += new System.EventHandler(this.cbUseOffsetBytes_CheckedChanged);
+            // 
+            // tbOffsetString
+            // 
+            this.tbOffsetString.Enabled = false;
+            this.tbOffsetString.Location = new System.Drawing.Point(150, 90);
+            this.tbOffsetString.Name = "tbOffsetString";
+            this.tbOffsetString.Size = new System.Drawing.Size(200, 20);
+            this.tbOffsetString.TabIndex = 28;
+            // 
+            // cbUseOffsetString
+            // 
+            this.cbUseOffsetString.AutoSize = true;
+            this.cbUseOffsetString.Location = new System.Drawing.Point(9, 92);
+            this.cbUseOffsetString.Name = "cbUseOffsetString";
+            this.cbUseOffsetString.Size = new System.Drawing.Size(122, 17);
+            this.cbUseOffsetString.TabIndex = 27;
+            this.cbUseOffsetString.Text = "使用偏移字符串验证";
+            this.cbUseOffsetString.UseVisualStyleBackColor = true;
+            this.cbUseOffsetString.CheckedChanged += new System.EventHandler(this.cbUseOffsetString_CheckedChanged);
             // 
             // tbOffsetModuloSearchStringResult
             // 
@@ -361,7 +429,7 @@
             this.cbCutToEOFWhenTerminatorNotFound.Name = "cbCutToEOFWhenTerminatorNotFound";
             this.cbCutToEOFWhenTerminatorNotFound.Size = new System.Drawing.Size(213, 17);
             this.cbCutToEOFWhenTerminatorNotFound.TabIndex = 25;
-            this.cbCutToEOFWhenTerminatorNotFound.Text = "未找到终止符时切到EOF";
+            this.cbCutToEOFWhenTerminatorNotFound.Text = "未找到终止符时切割到文件末尾";
             this.cbCutToEOFWhenTerminatorNotFound.UseVisualStyleBackColor = true;
             // 
             // tbLengthMultiplier
@@ -604,6 +672,16 @@
             this.panel2.Size = new System.Drawing.Size(693, 82);
             this.panel2.TabIndex = 19;
             // 
+            // cbOutputLogFile
+            // 
+            this.cbOutputLogFile.AutoSize = true;
+            this.cbOutputLogFile.Location = new System.Drawing.Point(133, 3);
+            this.cbOutputLogFile.Name = "cbOutputLogFile";
+            this.cbOutputLogFile.Size = new System.Drawing.Size(108, 17);
+            this.cbOutputLogFile.TabIndex = 23;
+            this.cbOutputLogFile.Text = "输出批处理文件";
+            this.cbOutputLogFile.UseVisualStyleBackColor = true;
+            // 
             // btnBrowseOutputFolder
             // 
             this.btnBrowseOutputFolder.Location = new System.Drawing.Point(308, 56);
@@ -707,20 +785,10 @@
             this.panel1.BackColor = System.Drawing.SystemColors.Control;
             this.panel1.Controls.Add(this.groupBox3);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(0, 151);
+            this.panel1.Location = new System.Drawing.Point(0, 252);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(716, 363);
+            this.panel1.Size = new System.Drawing.Size(716, 262);
             this.panel1.TabIndex = 8;
-            // 
-            // cbOutputLogFile
-            // 
-            this.cbOutputLogFile.AutoSize = true;
-            this.cbOutputLogFile.Location = new System.Drawing.Point(133, 3);
-            this.cbOutputLogFile.Name = "cbOutputLogFile";
-            this.cbOutputLogFile.Size = new System.Drawing.Size(108, 17);
-            this.cbOutputLogFile.TabIndex = 23;
-            this.cbOutputLogFile.Text = "输出批处理文件";
-            this.cbOutputLogFile.UseVisualStyleBackColor = true;
             // 
             // OffsetFinderForm
             // 
@@ -822,5 +890,11 @@
         private System.Windows.Forms.TextBox tbLengthMultiplier;
         private System.Windows.Forms.CheckBox cbCutToEOFWhenTerminatorNotFound;
         private System.Windows.Forms.CheckBox cbOutputLogFile;
+        private System.Windows.Forms.CheckBox cbUseOffsetString;
+        private System.Windows.Forms.TextBox tbOffsetString;
+        private System.Windows.Forms.CheckBox cbUseOffsetBytes;
+        private System.Windows.Forms.TextBox tbOffsetBytes;
+        private System.Windows.Forms.Label lblOffsetCount;
+        private System.Windows.Forms.TextBox tbOffsetCount;
     }
 }
