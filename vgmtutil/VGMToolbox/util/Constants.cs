@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
 
 namespace VGMToolbox.util
-{   
+{
     /// <summary>
     /// Struct containing criteria used to find offsets.
     /// </summary>
@@ -19,12 +19,17 @@ namespace VGMToolbox.util
         private string cutSizeOffsetSize;
         private bool isCutSizeAnOffset;
         private string outputFileExtension;
-        private bool isLittleEndian;        
+        private bool isLittleEndian;
         private bool useTerminatorForCutSize;
         private string terminatorString;
         private bool treatTerminatorStringAsHex;
         private bool includeTerminatorLength;
         private string extraCutSizeBytes;
+        private bool useOffsetString;
+        private string offsetString;
+        private bool useOffsetBytes;
+        private string offsetBytes;
+        private string offsetCount;
 
         public bool DoSearchStringModulo
         {
@@ -81,7 +86,7 @@ namespace VGMToolbox.util
         {
             set { startingOffset = value; }
             get { return startingOffset; }
-        }        
+        }
 
         /// <summary>
         /// Gets or sets flag to indicate search string is a hex value.
@@ -91,7 +96,7 @@ namespace VGMToolbox.util
             get { return treatSearchStringAsHex; }
             set { treatSearchStringAsHex = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets flag to cut the file when the offset is found.
         /// </summary>
@@ -100,7 +105,7 @@ namespace VGMToolbox.util
             get { return cutFile; }
             set { cutFile = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets offset within destination file Search String would reside.
         /// </summary>
@@ -109,7 +114,7 @@ namespace VGMToolbox.util
             get { return searchStringOffset; }
             set { searchStringOffset = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets size to cut from file
         /// </summary>
@@ -118,7 +123,7 @@ namespace VGMToolbox.util
             get { return cutSize; }
             set { cutSize = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets size of offset holding cut size
         /// </summary>
@@ -127,7 +132,7 @@ namespace VGMToolbox.util
             get { return cutSizeOffsetSize; }
             set { cutSizeOffsetSize = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets flag indicating that cut size is an offset.
         /// </summary>
@@ -136,7 +141,7 @@ namespace VGMToolbox.util
             get { return isCutSizeAnOffset; }
             set { isCutSizeAnOffset = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets file extension to use for cut files.
         /// </summary>
@@ -145,7 +150,7 @@ namespace VGMToolbox.util
             get { return outputFileExtension; }
             set { outputFileExtension = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets flag indicating that offset based cut size is stored in Little Endian byte order.
         /// </summary>
@@ -161,13 +166,13 @@ namespace VGMToolbox.util
 
         public bool UseLengthMultiplier { set; get; }
         public string LengthMultiplier { set; get; }
-        
+
         public bool UseTerminatorForCutSize
         {
             get { return useTerminatorForCutSize; }
             set { useTerminatorForCutSize = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets terminator string to search for.
         /// </summary>
@@ -176,7 +181,7 @@ namespace VGMToolbox.util
             get { return terminatorString; }
             set { terminatorString = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets flag indicating that Terminator String is hex.
         /// </summary>
@@ -185,7 +190,7 @@ namespace VGMToolbox.util
             get { return treatTerminatorStringAsHex; }
             set { treatTerminatorStringAsHex = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets flag indicating that the length of the terminator should be included in the cut size.
         /// </summary>
@@ -207,6 +212,51 @@ namespace VGMToolbox.util
         }
 
         public string OutputFolder { get; set; }
+
+        /// <summary>
+        /// Gets or sets flag to use offset string validation.
+        /// </summary>
+        public bool UseOffsetString
+        {
+            get { return useOffsetString; }
+            set { useOffsetString = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the offset string to validate.
+        /// </summary>
+        public string OffsetString
+        {
+            get { return offsetString; }
+            set { offsetString = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets flag to use offset bytes validation.
+        /// </summary>
+        public bool UseOffsetBytes
+        {
+            get { return useOffsetBytes; }
+            set { useOffsetBytes = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the offset bytes to validate.
+        /// </summary>
+        public string OffsetBytes
+        {
+            get { return offsetBytes; }
+            set { offsetBytes = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the offset count from search string to offset validation.
+        /// </summary>
+        public string OffsetCount
+        {
+            get { return offsetCount; }
+            set { offsetCount = value; }
+        }
     }
 
     /// <summary>
@@ -242,7 +292,7 @@ namespace VGMToolbox.util
             get { return fileName; }
             set { fileName = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets errorMessage.
         /// </summary>
@@ -251,7 +301,7 @@ namespace VGMToolbox.util
             get { return errorMessage; }
             set { errorMessage = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets genericMessage.
         /// </summary>
@@ -260,7 +310,7 @@ namespace VGMToolbox.util
             get { return genericMessage; }
             set { genericMessage = value; }
         }
-        
+
         /// <summary>
         /// Gets or sets newNode.
         /// </summary>
@@ -331,13 +381,13 @@ namespace VGMToolbox.util
     }
 
     public enum VfsFileRecordRelativeOffsetLocationType
-    { 
+    {
         FileRecordStart,
         FileRecordEnd
     }
 
     public struct VfsExtractionStruct
-    { 
+    {
         // header size
         public bool UseStaticHeaderSize { set; get; }
         public string StaticHeaderSize { set; get; }
@@ -388,9 +438,9 @@ namespace VGMToolbox.util
         public string StaticFileNameLength { set; get; }
 
         public bool UseFileNameTerminatorString { set; get; }
-        public string FileNameTerminatorString { set; get; }  
+        public string FileNameTerminatorString { set; get; }
     }
-    
+
     public struct SimpleFileExtractionStruct
     {
         public string FilePath { set; get; }
@@ -417,12 +467,12 @@ namespace VGMToolbox.util
         /// size without using the large object heap which has poor collection.
         /// </summary>
         public const int FileReadChunkSize = 71680;
-                
+
         /// <summary>
         /// Constant used to send an ignore the value message to the progress bar.
         /// </summary>
         public const int IgnoreProgress = -1;
-        
+
         /// <summary>
         /// Constant used to send a generic message to the progress bar.
         /// </summary>
