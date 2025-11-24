@@ -1024,9 +1024,6 @@
     <Content Include="plugins\AdvancedCutter\3dscwav.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="plugins\AdvancedCutter\3ds_ktss.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="plugins\AdvancedCutter\arcbmiidx2dx.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -1046,6 +1043,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="plugins\AdvancedCutter\jpg image.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="plugins\AdvancedCutter\Koei Tecmo ktss.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="plugins\AdvancedCutter\Koei Tecmo kvs.xml">
@@ -1123,10 +1123,13 @@
     <Content Include="plugins\AdvancedCutter\psxvab.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="plugins\AdvancedCutter\riff.xml">
+    <Content Include="plugins\AdvancedCutter\unreal game.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="plugins\AdvancedCutter\RIFX大端序wem.xml">
+    <Content Include="plugins\AdvancedCutter\waveform audio.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="plugins\AdvancedCutter\rifx wwise.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="plugins\AdvancedCutter\sddrvs.tsk.xml">
@@ -1168,7 +1171,7 @@
     <Content Include="plugins\AdvancedCutter\wiiufwav.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="plugins\AdvancedCutter\wwise-pck-wsp-bnk.xml">
+    <Content Include="plugins\AdvancedCutter\wwise audio.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="plugins\AdvancedCutter\x360tri-ace-iu-so4-wavestrm.xml">
@@ -1537,7 +1540,7 @@ del "vgmtutil.dll.config"</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>这台计算机上缺少此项目引用的NuGet程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
+      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
     </PropertyGroup>
   </Target>
   <ItemGroup>
