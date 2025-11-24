@@ -1303,7 +1303,6 @@ namespace VGMToolbox.util
                     searchCriteria.DoSearchStringModulo, searchStringModuloDivisor,
                     searchStringModuloResult)) != -1)
                 {
-                    // 偏移验证逻辑
                     bool offsetValidationPassed = true;
 
                     if (searchCriteria.UseOffsetString || searchCriteria.UseOffsetBytes)
@@ -1315,7 +1314,6 @@ namespace VGMToolbox.util
                         {
                             if (searchCriteria.UseOffsetString && !String.IsNullOrEmpty(searchCriteria.OffsetString))
                             {
-                                // 验证偏移字符串
                                 string expectedString = searchCriteria.OffsetString;
                                 byte[] foundBytes = ParseFile.ParseSimpleOffset(fs, validationOffset, expectedString.Length);
                                 string foundString = Encoding.ASCII.GetString(foundBytes);
@@ -1323,20 +1321,19 @@ namespace VGMToolbox.util
                                 if (foundString != expectedString)
                                 {
                                     offsetValidationPassed = false;
-                                    ret.AppendFormat(CultureInfo.CurrentCulture, "  偏移字符串验证失败: 期望 '{0}'，找到 '{1}'，跳过 0x{2}",
+                                    ret.AppendFormat(CultureInfo.CurrentCulture, "偏移字符串验证失败:期望'{0}'，找到'{1}'，跳过0x{2}",
                                         expectedString, foundString, offset.ToString("X8", CultureInfo.InvariantCulture));
                                     ret.Append(Environment.NewLine);
                                 }
                             }
                             else if (searchCriteria.UseOffsetBytes && offsetValidationBytes != null)
                             {
-                                // 验证偏移字节序列
                                 byte[] foundBytes = ParseFile.ParseSimpleOffset(fs, validationOffset, offsetValidationBytes.Length);
 
                                 if (!ByteArrayEquals(foundBytes, offsetValidationBytes))
                                 {
                                     offsetValidationPassed = false;
-                                    ret.AppendFormat(CultureInfo.CurrentCulture, "  偏移字节验证失败: 期望 '{0}'，找到 '{1}'，跳过 0x{2}",
+                                    ret.AppendFormat(CultureInfo.CurrentCulture, "偏移字节验证失败:期望'{0}'，找到'{1}'，跳过0x{2}",
                                         searchCriteria.OffsetBytes,
                                         ByteArrayToString(foundBytes),
                                         offset.ToString("X8", CultureInfo.InvariantCulture));
@@ -1347,14 +1344,13 @@ namespace VGMToolbox.util
                         else
                         {
                             offsetValidationPassed = false;
-                            ret.AppendFormat(CultureInfo.CurrentCulture, "  偏移验证位置超出文件范围: 0x{0}，跳过 0x{1}",
+                            ret.AppendFormat(CultureInfo.CurrentCulture, "偏移验证位置超出文件范围:0x{0}，跳过0x{1}",
                                 validationOffset.ToString("X8", CultureInfo.InvariantCulture),
                                 offset.ToString("X8", CultureInfo.InvariantCulture));
                             ret.Append(Environment.NewLine);
                         }
                     }
 
-                    // 如果偏移验证失败，跳过这个匹配
                     if (!offsetValidationPassed)
                     {
                         previousOffset = offset + 1;
@@ -1903,7 +1899,7 @@ namespace VGMToolbox.util
 
             if (riffChunkOffset < 0)
             {
-                throw new IndexOutOfRangeException("找不到RIFF块: " + offsetInfo.RiffChunkString);
+                throw new IndexOutOfRangeException("找不到RIFF块:" + offsetInfo.RiffChunkString);
             }
             else
             {
@@ -1922,7 +1918,7 @@ namespace VGMToolbox.util
                         newValueOffset += riffChunkOffset + riffChunkSize;
                         break;
                     default:
-                        throw new InvalidDataException("RIFF的未知相对位置字符串: " + offsetInfo.RelativeLocationToRiffChunkString);
+                        throw new InvalidDataException("RIFF的未知相对位置字符串:" + offsetInfo.RelativeLocationToRiffChunkString);
                         break;
                 }
 
