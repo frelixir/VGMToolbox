@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.ComponentModel;
-using System.IO;
 
 using VGMToolbox.plugin;
 using VGMToolbox.util;
@@ -11,7 +10,7 @@ namespace VGMToolbox.tools.extract
     {
         public const string LITTLE_ENDIAN = "小端序";
         public const string BIG_ENDIAN = "大端序";
-        
+
         public struct OffsetFinderStruct : IVgmtWorkerStruct
         {
             public string searchString;
@@ -20,7 +19,7 @@ namespace VGMToolbox.tools.extract
             public bool treatSearchStringAsHex;
 
             public bool cutFile;
-            public string searchStringOffset;            
+            public string searchStringOffset;
             public string cutSize;
             public string cutSizeOffsetSize;
             public bool isCutSizeAnOffset;
@@ -38,6 +37,12 @@ namespace VGMToolbox.tools.extract
             public string extraCutSizeBytes;
 
             public bool OutputLogFile { set; get; }
+
+            public bool UseOffsetString { set; get; }
+            public string OffsetString { set; get; }
+            public bool UseOffsetBytes { set; get; }
+            public string OffsetBytes { set; get; }
+            public string OffsetCount { set; get; }
 
             private string[] sourcePaths;
             public string[] SourcePaths
@@ -99,10 +104,10 @@ namespace VGMToolbox.tools.extract
                 findOffsetStruct.IsCutSizeAnOffset = this.isCutSizeAnOffset;
                 findOffsetStruct.OutputFileExtension = this.outputFileExtension;
                 findOffsetStruct.IsLittleEndian = this.isLittleEndian;
-                
+
                 findOffsetStruct.UseLengthMultiplier = this.UseLengthMultiplier;
                 findOffsetStruct.LengthMultiplier = this.LengthMultiplier;
-                
+
                 findOffsetStruct.UseTerminatorForCutSize = this.useTerminatorForCutsize;
                 findOffsetStruct.TerminatorString = this.terminatorString;
                 findOffsetStruct.TreatTerminatorStringAsHex = this.treatTerminatorStringAsHex;
@@ -118,20 +123,26 @@ namespace VGMToolbox.tools.extract
                 findOffsetStruct.SearchStringModuloResult = this.SearchStringModuloResult;
                 findOffsetStruct.OutputFolder = this.OutputFolder;
 
+                findOffsetStruct.UseOffsetString = this.UseOffsetString;
+                findOffsetStruct.OffsetString = this.OffsetString;
+                findOffsetStruct.UseOffsetBytes = this.UseOffsetBytes;
+                findOffsetStruct.OffsetBytes = this.OffsetBytes;
+                findOffsetStruct.OffsetCount = this.OffsetCount;
+
                 return findOffsetStruct;
             }
         }
 
-        public OffsetFinderWorker() : 
-            base() 
+        public OffsetFinderWorker() :
+            base()
         {
             this.progressCounterIncrementer = 10;
         }
-        
+
         protected override void DoTaskForFile(string pPath, IVgmtWorkerStruct pOffsetFinderStruct,
             DoWorkEventArgs e)
         {
-            OffsetFinderStruct offsetFinderStruct = (OffsetFinderStruct) pOffsetFinderStruct;
+            OffsetFinderStruct offsetFinderStruct = (OffsetFinderStruct)pOffsetFinderStruct;
 
             VGMToolbox.util.FindOffsetStruct findOffsetStruct = offsetFinderStruct.ToFindOffsetStruct();
 
@@ -143,7 +154,7 @@ namespace VGMToolbox.tools.extract
             //this.progressStruct.Clear();
             //this.progressStruct.GenericMessage = output;
             //ReportProgress(Constants.ProgressMessageOnly, this.progressStruct);            
-        }    
+        }
 
         protected override void OnDoWork(DoWorkEventArgs e)
         {
@@ -156,6 +167,6 @@ namespace VGMToolbox.tools.extract
             }
 
             base.OnDoWork(e);
-        }    
+        }
     }
 }
