@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -1199,6 +1199,7 @@ namespace VGMToolbox.util
             int j = 0;
             byte[] searchBytes;
             byte[] terminatorBytes = null;
+            byte[] offsetValidationBytes = null;
             System.Text.Encoding enc = System.Text.Encoding.ASCII;
 
             long cutStart;
@@ -1267,6 +1268,12 @@ namespace VGMToolbox.util
                 terminatorBytes = enc.GetBytes(searchCriteria.TerminatorString);
             }
 
+            // create offset validation bytes
+            if (searchCriteria.UseOffsetBytes && !String.IsNullOrEmpty(searchCriteria.OffsetBytes))
+            {
+                offsetValidationBytes = ByteConversion.GetBytesFromHexString(searchCriteria.OffsetBytes);
+            }
+
             FileInfo fi = new FileInfo(sourcePath);
 
             using (FileStream fs = File.Open(Path.GetFullPath(sourcePath), FileMode.Open, FileAccess.Read))
@@ -1292,11 +1299,68 @@ namespace VGMToolbox.util
                 }
 
                 // search for our string
-                // while ((offset = ParseFile.GetNextOffset(fs, previousOffset, searchBytes)) != -1)
                 while ((offset = ParseFile.GetNextOffset(fs, previousOffset, searchBytes,
                     searchCriteria.DoSearchStringModulo, searchStringModuloDivisor,
                     searchStringModuloResult)) != -1)
                 {
+                    // 偏移验证逻辑
+                    bool offsetValidationPassed = true;
+
+                    if (searchCriteria.UseOffsetString || searchCriteria.UseOffsetBytes)
+                    {
+                        long offsetCount = String.IsNullOrEmpty(searchCriteria.OffsetCount) ? 0 : VGMToolbox.util.ByteConversion.GetLongValueFromString(searchCriteria.OffsetCount);
+                        long validationOffset = offset + offsetCount;
+
+                        if (validationOffset >= 0 && validationOffset < fs.Length)
+                        {
+                            if (searchCriteria.UseOffsetString && !String.IsNullOrEmpty(searchCriteria.OffsetString))
+                            {
+                                // 验证偏移字符串
+                                string expectedString = searchCriteria.OffsetString;
+                                byte[] foundBytes = ParseFile.ParseSimpleOffset(fs, validationOffset, expectedString.Length);
+                                string foundString = Encoding.ASCII.GetString(foundBytes);
+
+                                if (foundString != expectedString)
+                                {
+                                    offsetValidationPassed = false;
+                                    ret.AppendFormat(CultureInfo.CurrentCulture, "  偏移字符串验证失败: 期望 '{0}'，找到 '{1}'，跳过 0x{2}",
+                                        expectedString, foundString, offset.ToString("X8", CultureInfo.InvariantCulture));
+                                    ret.Append(Environment.NewLine);
+                                }
+                            }
+                            else if (searchCriteria.UseOffsetBytes && offsetValidationBytes != null)
+                            {
+                                // 验证偏移字节序列
+                                byte[] foundBytes = ParseFile.ParseSimpleOffset(fs, validationOffset, offsetValidationBytes.Length);
+
+                                if (!ByteArrayEquals(foundBytes, offsetValidationBytes))
+                                {
+                                    offsetValidationPassed = false;
+                                    ret.AppendFormat(CultureInfo.CurrentCulture, "  偏移字节验证失败: 期望 '{0}'，找到 '{1}'，跳过 0x{2}",
+                                        searchCriteria.OffsetBytes,
+                                        ByteArrayToString(foundBytes),
+                                        offset.ToString("X8", CultureInfo.InvariantCulture));
+                                    ret.Append(Environment.NewLine);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            offsetValidationPassed = false;
+                            ret.AppendFormat(CultureInfo.CurrentCulture, "  偏移验证位置超出文件范围: 0x{0}，跳过 0x{1}",
+                                validationOffset.ToString("X8", CultureInfo.InvariantCulture),
+                                offset.ToString("X8", CultureInfo.InvariantCulture));
+                            ret.Append(Environment.NewLine);
+                        }
+                    }
+
+                    // 如果偏移验证失败，跳过这个匹配
+                    if (!offsetValidationPassed)
+                    {
+                        previousOffset = offset + 1;
+                        continue;
+                    }
+
                     // do cut file tasks
                     if (searchCriteria.CutFile)
                     {
@@ -1357,16 +1421,33 @@ namespace VGMToolbox.util
                                     terminatorModuloResult);
 
                                 // cut to EOF if terminator not found
-                                if (searchCriteria.CutToEofIfTerminatorNotFound && (terminatorOffset == -1))
+                                if (terminatorOffset == -1)
                                 {
-                                    cutSize = fs.Length - cutStart;
+                                    if (searchCriteria.CutToEofIfTerminatorNotFound)
+                                    {
+                                        cutSize = fs.Length - cutStart;
+
+                                        if (cutSize < 1)
+                                        {
+                                            cutSize = fs.Length - cutStart;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        cutSize = -1;
+                                    }
                                 }
                                 else
                                 {
                                     cutSize = terminatorOffset - cutStart;
+
+                                    if (cutSize < 1)
+                                    {
+                                        cutSize = terminatorOffset - cutStart + terminatorBytes.Length;
+                                    }
                                 }
 
-                                if (searchCriteria.IncludeTerminatorLength)
+                                if (searchCriteria.IncludeTerminatorLength && terminatorOffset != -1)
                                 {
                                     cutSize += terminatorBytes.Length;
                                 }
@@ -1392,14 +1473,40 @@ namespace VGMToolbox.util
                         }
                         else if (cutSize < 1)
                         {
-                            ret.AppendFormat(
-                                CultureInfo.CurrentCulture,
-                                "  警告:对于在地址0x{0}处找到的字符串,裁剪尺寸小于1（{1}）……跳过.",
-                                offset.ToString("X8", CultureInfo.InvariantCulture),
-                                cutSize.ToString("X8", CultureInfo.InvariantCulture));
-                            ret.Append(Environment.NewLine);
+                            if (searchCriteria.UseTerminatorForCutSize && searchCriteria.CutToEofIfTerminatorNotFound && cutSize == -1)
+                            {
+                                cutSize = fs.Length - cutStart;
+                                skipCut = false;
 
-                            skipCut = true;
+                                if (cutSize < 1)
+                                {
+                                    ret.AppendFormat(
+                                        CultureInfo.CurrentCulture,
+                                        "  警告:对于在地址0x{0}处找到的字符串,从当前位置到文件末尾的尺寸小于1（{1}）……跳过.",
+                                        offset.ToString("X8", CultureInfo.InvariantCulture),
+                                        cutSize.ToString("X8", CultureInfo.InvariantCulture));
+                                    ret.Append(Environment.NewLine);
+                                    skipCut = true;
+                                }
+                                else
+                                {
+                                    ret.AppendFormat(
+                                        CultureInfo.CurrentCulture,
+                                        "  信息:在地址0x{0}处未找到终止符,将切割到文件末尾.",
+                                        offset.ToString("X8", CultureInfo.InvariantCulture));
+                                    ret.Append(Environment.NewLine);
+                                }
+                            }
+                            else
+                            {
+                                ret.AppendFormat(
+                                    CultureInfo.CurrentCulture,
+                                    "  警告:对于在地址0x{0}处找到的字符串,裁剪尺寸小于1（{1}）……跳过.",
+                                    offset.ToString("X8", CultureInfo.InvariantCulture),
+                                    cutSize.ToString("X8", CultureInfo.InvariantCulture));
+                                ret.Append(Environment.NewLine);
+                                skipCut = true;
+                            }
                         }
                         else if ((cutStart + cutSize) > fi.Length)
                         {
@@ -1457,7 +1564,19 @@ namespace VGMToolbox.util
             messages = ret.ToString();
             return outputFolder;
         }
+        public static bool ByteArrayEquals(byte[] a, byte[] b)
+        {
+            if (a == null || b == null || a.Length != b.Length)
+                return false;
 
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                    return false;
+            }
+
+            return true;
+        }
         public static void ParseVirtualFileSystem(string sourcePath, string headerFilePath, string outputFolderPath,
             VfsExtractionStruct vfsInformation, out string messages, bool outputLog, bool outputBatchFile)
         {
