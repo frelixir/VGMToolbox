@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -111,7 +111,7 @@ namespace VGMToolbox.format
 
                         if (!ParseFile.CompareSegment(this.FileHeader.MagicBytes, 0, XmvMagicBytes))
                         {
-                            throw new FormatException(String.Format("XMV魔术字节：在偏移量0xC{0}处找不到“xobX”", Environment.NewLine));
+                            throw new FormatException(String.Format("XMV文件头：在偏移量0xC{0}处找不到“xobX”", Environment.NewLine));
                         }
 
                         this.FileHeader.InitialPacketSize = ParseFile.ParseSimpleOffset(fs, 4, 4);
