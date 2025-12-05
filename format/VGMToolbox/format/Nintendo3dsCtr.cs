@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -97,7 +97,7 @@ namespace VGMToolbox.format
             }
             else
             {
-                throw new FormatException("在偏移量0x100处找不到NCSD的魔术字节.");
+                throw new FormatException("在偏移量0x100处找不到NCSD文件头.");
             }
         }
 
@@ -362,7 +362,7 @@ namespace VGMToolbox.format
                 {
                     if (ex is FormatException)
                     {
-                        MessageBox.Show(String.Format("在卷'{0}的预期RomFS偏移处找不到IVFC魔术字节,你确定它被解密了吗?'注意：由于解密样本不可用,系统卷{1}尚未测试.",
+                        MessageBox.Show(String.Format("在卷'{0}的预期RomFS偏移处找不到IVFC文件头,你确定它被解密了吗?'注意：由于解密样本不可用,系统卷{1}尚未测试.",
                                                       this.VolumeIdentifier, Nintendo3dsCtr.CTR_SYSTEM_PARTITION), "错误处理 3DS CTR");
                     }
                     else
