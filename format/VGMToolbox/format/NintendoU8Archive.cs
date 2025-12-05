@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +14,7 @@ namespace VGMToolbox.format
         public static readonly byte[] STANDARD_IDENTIFIER = new byte[] { 0x55, 0xAA, 0x38, 0x2D };
         public const uint IDENTIFIER_OFFSET = 0x00;
         public const string FORMAT_DESCRIPTION_STRING = "任天堂U8";
-        public const string EXTRACTION_FOLDER = "VGMT_U8提取";
+        public const string EXTRACTION_FOLDER = "_提取";
 
         public const byte NODE_TYPE_FILE = 0;
         public const byte NODE_TYPE_DIRECTORY = 1;
@@ -87,7 +87,7 @@ namespace VGMToolbox.format
             }
             else
             {
-                throw new FormatException("在偏移量0x00处找不到任天堂U8魔术字节.");
+                throw new FormatException("在偏移量0x00处找不到U8文件头.");
             }
         }
 
