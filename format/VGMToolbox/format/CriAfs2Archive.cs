@@ -118,7 +118,7 @@ namespace VGMToolbox.format
             }
             else
             {
-                throw new FormatException(String.Format("在偏移处找不到AFS2魔术字节: 0x{0}.", offset.ToString("X8")));
+                throw new FormatException(String.Format("在偏移处找不到AFS2魔数:0x{0}.", offset.ToString("X8")));
             }
         }
 
@@ -158,16 +158,31 @@ namespace VGMToolbox.format
 
                 foreach (ushort key in this.Files.Keys)
                 {
-                    byte[] fileHeader = ParseFile.ParseSimpleOffset(fs, (long)this.Files[key].FileOffsetByteAligned, 4);
+                    CriAfs2File file = this.Files[key];
+
+                    byte[] fileHeader = ParseFile.ParseSimpleOffset(fs, (long)file.FileOffsetByteAligned, 12);
                     string extension = GetFileExtension(fileHeader);
+                    if (extension == "bin")
+                    {
 
-                    string fileName = $"{baseFileName}_{fileIndex:D2}.{extension}";
-                    string outputPath = Path.Combine(destinationFolder, fileName);
+                        string fileName = $"{baseFileName}_{fileIndex:D2}.{extension}";
+                        string outputPath = Path.Combine(destinationFolder, fileName);
 
-                    ParseFile.ExtractChunkToFile64(fs,
-                        (ulong)this.Files[key].FileOffsetByteAligned,
-                        (ulong)this.Files[key].FileLength,
-                        outputPath, false, false);
+                        ParseFile.ExtractChunkToFile64(fs,
+                            (ulong)file.FileOffsetByteAligned,
+                            (ulong)file.FileLength,
+                            outputPath, false, false);
+                    }
+                    else
+                    {
+                        string fileName = $"{baseFileName}_{fileIndex:D2}.{extension}";
+                        string outputPath = Path.Combine(destinationFolder, fileName);
+
+                        ParseFile.ExtractChunkToFile64(fs,
+                            (ulong)file.FileOffsetByteAligned,
+                            (ulong)file.FileLength,
+                            outputPath, false, false);
+                    }
 
                     fileIndex++;
                 }
@@ -176,6 +191,17 @@ namespace VGMToolbox.format
 
         private string GetFileExtension(byte[] fileHeader)
         {
+            if (fileHeader.Length >= 8)
+            {
+                if (fileHeader[0] == 0xC8 && fileHeader[1] == 0xC3 &&
+                    fileHeader[2] == 0xC1 && fileHeader[3] == 0x00 &&
+                    fileHeader[4] == 0x03 && fileHeader[5] == 0x00 &&
+                    fileHeader[6] == 0x00 && fileHeader[7] == 0x60)
+                {
+                    return "hca";
+                }
+            }
+
             if (fileHeader.Length >= 4)
             {
                 if (fileHeader[0] == 0x48 && fileHeader[1] == 0x43 && fileHeader[2] == 0x41 && fileHeader[3] == 0x00)
@@ -184,7 +210,31 @@ namespace VGMToolbox.format
                 }
                 else if (fileHeader[0] == 0x52 && fileHeader[1] == 0x49 && fileHeader[2] == 0x46 && fileHeader[3] == 0x46)
                 {
-                    return "at3"; 
+                    return "at3";
+                }
+                else if (fileHeader.Length >= 10)
+                {
+                    if (fileHeader[0] == 0x80 && fileHeader[1] == 0x00)
+                    {
+                        byte[] adxSignature1 = { 0x03, 0x12, 0x04, 0x01, 0x00, 0x00 };
+                        byte[] adxSignature2 = { 0x03, 0x12, 0x04, 0x02, 0x00, 0x00 };
+
+                        bool isAdxSignature1 = true;
+                        bool isAdxSignature2 = true;
+
+                        for (int i = 0; i < 6; i++)
+                        {
+                            if (fileHeader[4 + i] != adxSignature1[i])
+                                isAdxSignature1 = false;
+                            if (fileHeader[4 + i] != adxSignature2[i])
+                                isAdxSignature2 = false;
+                        }
+
+                        if (isAdxSignature1 || isAdxSignature2)
+                        {
+                            return "adx";
+                        }
+                    }
                 }
             }
 
