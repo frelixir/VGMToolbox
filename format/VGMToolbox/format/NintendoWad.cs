@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.IO;
 using System.Security.Cryptography;
@@ -107,7 +107,7 @@ namespace VGMToolbox.format
             }
             else
             {
-                throw new FormatException("在偏移量0x03处找不到任天堂WAD魔术字节.");
+                throw new FormatException("在偏移量0x03处找不到任天堂WAD文件头.");
             }
         }
 
