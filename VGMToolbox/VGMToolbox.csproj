@@ -1129,9 +1129,6 @@
     <Content Include="plugins\AdvancedCutter\waveform audio.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="plugins\AdvancedCutter\rifx wwise.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="plugins\AdvancedCutter\sddrvs.tsk.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
